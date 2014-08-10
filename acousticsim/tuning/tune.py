@@ -1,5 +1,8 @@
 import os
 import random
+
+from numpy import inf
+
 from acousticsim.tuning.classes import DataSet,Configuration
 
 datasets = []
@@ -104,15 +107,18 @@ nz_dataset = DataSet(r'C:\Users\michael\Documents\Data\NZDiph',
                         nz_words,
                         productions = nz_productions)
 
-best = 0
 bestConfig = None
 representations = ['envelopes','mfcc']
 match_algorithm = ['xcorr','dtw']
 
 use_ati = True
-use_nz = True
+use_nz = False
 use_aic = True
 
+if use_aic:
+    best = inf
+else:
+    best = 0
 if use_ati and use_nz:
     LOG_PATH = r'C:\Users\michael\Documents\Tuning\atiNz_log.txt'
 elif use_ati:
@@ -120,33 +126,34 @@ elif use_ati:
 else:
     LOG_PATH = r'C:\Users\michael\Documents\Tuning\nz_log.txt'
 
-for i in range(2000):
-    print('Iteration: ', i)
-    rep = representations[random.randint(0,len(representations)-1)]
-    alg = match_algorithm[random.randint(0,len(match_algorithm)-1)]
-    config = Configuration(rep,alg)
-    config.verify()
-    print(config)
-    output_values = []
-    if use_ati:
-        output_values.append(ati_dataset.analyze_config(config,use_aic = use_aic,num_cores=5))
-    if use_nz:
-        output_values.append(nz_dataset.analyze_config(config,use_aic = use_aic,num_cores=5))
-    print(output_values)
-    if use_aic and output_values[0] < best:
-        best = output_values[0]
-        print('New best: ',best)
-        bestConfig = config
-        with open(LOG_PATH,'a') as f:
-            f.write('Score: %s\n' % ', '.join(map(str,output_values)))
-            f.write(str(bestConfig))
-            f.write('\n')
-    elif not use_aic and abs(output_values[0]) > best:
-        best = abs(output_values[0])
-        print('New best: ',best)
-        bestConfig = config
-        with open(LOG_PATH,'a') as f:
-            f.write('Score: %s\n' % ', '.join(map(str,output_values)))
-            f.write(str(bestConfig))
-            f.write('\n')
+if __name__ == '__main__':
+    for i in range(2000):
+        print('Iteration: ', i)
+        rep = representations[random.randint(0,len(representations)-1)]
+        alg = match_algorithm[random.randint(0,len(match_algorithm)-1)]
+        config = Configuration(rep,alg)
+        config.verify()
+        print(config)
+        output_values = []
+        if use_ati:
+            output_values.append(ati_dataset.analyze_config(config,use_aic = use_aic,num_cores=5))
+        if use_nz:
+            output_values.append(nz_dataset.analyze_config(config,use_aic = use_aic,num_cores=5))
+        print(output_values)
+        if use_aic and output_values[0] < best:
+            best = output_values[0]
+            print('New best: ',best)
+            bestConfig = config
+            with open(LOG_PATH,'a') as f:
+                f.write('Score: %s\n' % ', '.join(map(str,output_values)))
+                f.write(str(bestConfig))
+                f.write('\n')
+        elif not use_aic and abs(output_values[0]) > best:
+            best = abs(output_values[0])
+            print('New best: ',best)
+            bestConfig = config
+            with open(LOG_PATH,'a') as f:
+                f.write('Score: %s\n' % ', '.join(map(str,output_values)))
+                f.write(str(bestConfig))
+                f.write('\n')
 

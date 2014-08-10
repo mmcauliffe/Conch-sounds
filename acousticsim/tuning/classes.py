@@ -14,6 +14,8 @@ from scipy.stats.stats import pearsonr
 from acousticsim.representations import to_envelopes, to_mfcc
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
+from acousticsim.main import acoustic_similarity_mapping
+
 
 class DataSet(object):
     def __init__(self,directory,lookup_functions,words,productions = None,additional_model_info = None):
@@ -84,114 +86,11 @@ class DataSet(object):
         return path_mapping
 
     def analyze_config(self,config, use_aic = False, num_cores = 1):
-        cache = {}
-        num_bands=config.num_bands.get_value()
-        freq_lims = (config.min_freq.get_value(),config.max_freq.get_value())
-        window_length = config.window_length.get_value()
-        time_step = config.time_step.get_value()
-        use_praat = config.use_praat.get_value()
-        num_coeffs = config.num_coeffs.get_value()
-        num_bands = config.num_bands.get_value()
-        use_window = config.use_window.get_value()
-        use_power = config.use_power.get_value()
-        use_segments = config.use_segments.get_value()
 
-        if config.representation == 'envelopes':
-            if use_window:
-                to_rep = partial(to_envelopes,
-                                            num_bands=num_bands,
-                                            freq_lims=freq_lims,
-                                            window_length=window_length,
-                                            time_step=time_step)
-            else:
-                to_rep = partial(to_envelopes,num_bands=num_bands,freq_lims=freq_lims)
-        elif config.representation == 'mfcc':
-            to_rep = partial(to_mfcc,freq_lims=freq_lims,
-                                        num_coeffs=num_coeffs,
-                                        num_filters = num_bands,
-                                        win_len=window_length,
-                                        time_step=time_step,
-                                        use_power = use_power)
-        elif config.representation == 'mhec':
-            to_rep = partial(to_mhec, freq_lims=freq_lims,
-                                        num_coeffs=num_coeffs,
-                                        num_filters = num_bands,
-                                        window_length=window_length,
-                                        time_step=time_step,
-                                        use_power = use_power)
-        #elif config.representation == 'gammatone':
-            #if use_window:
-                #to_rep = partial(to_gammatone_envelopes,num_bands = num_bands,
-                                                    #freq_lims=freq_lims,
-                                                    #window_length=window_length,
-                                                    #time_step=time_step)
-            #else:
-                #to_rep = partial(to_gammatone_envelopes,num_bands = num_bands,
-                                                    #freq_lims=freq_lims)
-        #elif config.representation == 'melbank':
-            #to_rep = partial(to_melbank,freq_lims=freq_lims,
-                                        #win_len=window_length,
-                                        #time_step=time_step,
-                                        #num_filters = num_bands)
-        #elif config.representation == 'prosody':
-            #to_rep = partial(to_prosody,time_step=time_step)
+        kwarg_dict = config.to_kwargs()
+        kwarg_dict['num_cores'] = num_cores
 
-        if config.match_algorithm == 'xcorr':
-            dist_func = xcorr_distance
-        elif config.match_algorithm == 'dtw':
-            dist_func = dtw_distance
-        #elif config.match_algorithm == 'dct':
-            #dist_func = dct_distance
-
-        asim = {}
-        for pm in self.mapping:
-            filetup = tuple(map(lambda x: os.path.split(x)[1],pm))
-            if pm[0] not in cache:
-                cache[pm[0]] = to_rep(pm[0])
-
-                if use_segments and cache[pm[0]] is not None:
-                    cache[pm[0]] = to_segments(cache[pm[0]])
-            if pm[1] not in cache:
-                cache[pm[1]] = to_rep(pm[1])
-
-                if use_segments and cache[pm[1]] is not None:
-                    cache[pm[1]] = to_segments(cache[pm[1]])
-            if pm[2] not in cache:
-                cache[pm[2]] = to_rep(pm[2])
-
-                if use_segments and cache[pm[2]] is not None:
-                    cache[pm[2]] = to_segments(cache[pm[2]])
-
-            base = cache[pm[0]]
-            model = cache[pm[1]]
-            shadow = cache[pm[2]]
-
-
-            if base is None:
-                continue
-            if model is None:
-                continue
-            if shadow is None:
-                continue
-            dist1 = dist_func(base,model)
-            if dist1 == 0 or isnan(dist1):
-                print(base)
-                print(model)
-                print(dist1)
-                print(dist2)
-                raise(ValueError)
-            dist2 = dist_func(shadow,model)
-            if isnan(dist2):
-                print(base)
-                print(model)
-                print(dist1)
-                print(dist2)
-                raise(ValueError)
-            if config.use_similarity:
-                dist1 = 1/dist1
-                dist2 = 1/dist2
-            ratio = dist2 / dist1
-            asim[filetup] = ratio
+        asim = acoustic_similarity_mapping(self.mapping, **kwarg_dict)
 
         if use_aic:
             with tempfile.NamedTemporaryFile(mode='w',delete=False) as f:
@@ -304,6 +203,19 @@ class Configuration(object):
         while self.window_length.get_value() <= self.time_step.get_value():
             self.window_length.reset_value()
             self.time_step.reset_value()
+
+    def to_kwargs(self):
+        kwarg_dict = {}
+        kwarg_dict['rep'] = self.representation
+        kwarg_dict['match_algorithm'] = self.match_algorithm
+        kwarg_dict['num_filters']=self.num_bands.get_value()
+        kwarg_dict['freq_lims'] = (self.min_freq.get_value(),self.max_freq.get_value())
+        kwarg_dict['win_len'] = self.window_length.get_value()
+        kwarg_dict['time_step'] = self.time_step.get_value()
+        kwarg_dict['num_coeffs'] = self.num_coeffs.get_value()
+        kwarg_dict['use_power'] = self.use_power.get_value()
+
+        return kwarg_dict
 
     def __str__(self):
 
