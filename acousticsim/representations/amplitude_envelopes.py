@@ -1,7 +1,7 @@
 from numpy import pi,exp,log,abs,sum,sqrt,array, hanning, arange, zeros,cos,ceil,mean
 
 from scipy.signal import filtfilt,butter,hilbert,resample
-from acousticsim.representations.helper import preproc,make_erb_cfs,nextpow2#,fftfilt
+from acousticsim.representations.helper import preproc,make_erb_cfs,nextpow2,fftfilt
 
 def to_envelopes(path,num_bands,freq_lims,window_length=None,time_step=None):
     """Generate amplitude envelopes from a full path to a .wav, following

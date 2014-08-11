@@ -109,10 +109,10 @@ nz_dataset = DataSet(r'C:\Users\michael\Documents\Data\NZDiph',
 
 bestConfig = None
 representations = ['envelopes','mfcc']
-match_algorithm = ['xcorr','dtw']
+match_algorithm = ['xcorr','dtw','dct']
 
 use_ati = True
-use_nz = False
+use_nz = True
 use_aic = True
 
 if use_aic:

@@ -1,2 +1,3 @@
 from acousticsim.representations.mfcc import to_mfcc
 from acousticsim.representations.amplitude_envelopes import to_envelopes
+from acousticsim.representations.mhec import to_mhec
