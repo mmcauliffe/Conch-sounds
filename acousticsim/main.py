@@ -140,6 +140,9 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
     cache = generate_cache(path_mapping, to_rep, num_cores)
     asim = calc_asim(path_mapping,cache,dist_func,num_cores)
 
+    if kwargs.get('return_rep',False):
+        return asim, cache
+
     return asim
 
 def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
@@ -229,7 +232,7 @@ def rep_worker(job_q,return_dict,rep_func):
         except Empty:
             break
         rep = rep_func(filename)
-        return_dict[filename] = rep
+        return_dict[os.path.split(filename)[1]] = rep
 
 def generate_cache(path_mapping,rep_func,num_procs):
     all_files = set()
@@ -264,11 +267,11 @@ def dist_worker(job_q,return_dict,dist_func,axb,cache):
         except Empty:
             break
         filetup = tuple(map(lambda x: os.path.split(x)[1],pm))
-        base = cache[pm[0]]
-        model = cache[pm[1]]
+        base = cache[filetup[0]]
+        model = cache[filetup[1]]
         dist1 = dist_func(base,model)
         if axb:
-            shadow = cache[pm[2]]
+            shadow = cache[filetup[2]]
             dist2 = dist_func(shadow,model)
             ratio = dist2 / dist1
         else:
