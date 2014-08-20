@@ -1,5 +1,5 @@
 import os
-import multiprocessing
+from multiprocessing import Process, Manager, Queue
 import time
 from queue import Empty
 
@@ -239,16 +239,16 @@ def generate_cache(path_mapping,rep_func,num_procs):
     for pm in path_mapping:
         all_files.update(pm)
 
-    job_queue = multiprocessing.Queue()
+    job_queue = Queue()
 
     for f in all_files:
         job_queue.put(f)
 
-    manager = multiprocessing.Manager()
+    manager = Manager()
     return_dict = manager.dict()
     procs = []
     for i in range(num_procs):
-        p = multiprocessing.Process(
+        p = Process(
                 target=rep_worker,
                 args=(job_queue,
                       return_dict,rep_func))
@@ -285,16 +285,16 @@ def calc_asim(path_mapping, cache,dist_func,num_procs):
     else:
         axb = False
 
-    job_queue = multiprocessing.Queue()
+    job_queue = Queue()
 
     for pm in path_mapping:
         job_queue.put(pm)
 
-    manager = multiprocessing.Manager()
+    manager = Manager()
     return_dict = manager.dict()
     procs = []
     for i in range(num_procs):
-        p = multiprocessing.Process(
+        p = Process(
                 target=dist_worker,
                 args=(job_queue,
                       return_dict,dist_func,axb,cache))
