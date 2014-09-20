@@ -9,6 +9,14 @@ def nextpow2(x):
 
     return ceil(log2(abs(x)))
 
+def extract_wav(path,outpath,begin_time,end_time):
+    sr, sig = wavfile.read(path)
+
+    begin = int(sr * begin_time)
+    end = int(sr * end_time)
+
+    newsig = sig[begin:end]
+    wavfile.write(outpath,sr,newsig)
 
 def preproc(path,sr=16000,alpha=0.95):
     """Preprocess a .wav file for later processing.  Currently assumes a
@@ -32,8 +40,10 @@ def preproc(path,sr=16000,alpha=0.95):
 
     """
     oldsr,sig = wavfile.read(path)
-    if len(sig.shape) > 1:
+    try:
         sig = sig[:,0]
+    except IndexError:
+        pass
 
     if sr != oldsr:
         t = len(sig)/oldsr
@@ -41,8 +51,9 @@ def preproc(path,sr=16000,alpha=0.95):
         proc = resample(sig,numsamp)
     else:
         proc = sig
-    proc = proc / 32768
-    proc = lfilter([1., -alpha],1,proc)
+    #proc = proc / 32768
+    if alpha != 0:
+        proc = lfilter([1., -alpha],1,proc)
     return sr,proc
 
 def erb_rate_to_hz(x):
@@ -93,7 +104,10 @@ def fftfilt(b, x, *n):
             # lengths that are powers of 2 are considered:
             N = 2**arange(ceil(log2(N_b)),floor(log2(N_x)))
             cost = ceil(N_x/(N-N_b+1))*N*(log2(N)+1)
-            N_fft = N[argmin(cost)]
+            if cost:
+                N_fft = N[argmin(cost)]
+            else:
+                N_fft = 2**nextpow2(N_b+N_x-1)
 
         else:
 

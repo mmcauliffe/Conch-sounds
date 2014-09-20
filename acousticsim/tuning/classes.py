@@ -7,7 +7,7 @@ from functools import partial
 import subprocess
 import tempfile
 
-from numpy import isnan,log
+from numpy import isnan,log, array
 
 from scipy.stats.stats import pearsonr
 
@@ -128,8 +128,9 @@ class DataSet(object):
         y = []
         for k,v in asim.items():
 
-            resps = [l['Dependent'] for l in self.listenerResp if l['axbtuple'] == k]
-
+            resps = array([int(l['Dependent']) for l in self.listenerResp if l['axbtuple'] == k])
+            if len(resps) == 0:
+                continue
             x.append(sum(resps)/len(resps))
             y.append(v)
         correlation = pearsonr(x,y)

@@ -2,14 +2,84 @@ import os
 from multiprocessing import Process, Manager, Queue
 import time
 from queue import Empty
+from collections import OrderedDict
 
 from numpy import zeros
 
 from functools import partial
 
-from acousticsim.representations import to_envelopes, to_mfcc, to_mhec
+from acousticsim.representations import to_envelopes, to_mfcc, to_mhec, to_segments
 
-from acousticsim.distance import dtw_distance, xcorr_distance
+from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
+
+def _build_to_rep(**kwargs):
+    rep = kwargs.get('rep', 'mfcc')
+
+
+    num_filters = kwargs.get('num_filters',None)
+    num_coeffs = kwargs.get('num_coeffs', 20)
+
+    freq_lims = kwargs.get('freq_lims', (80, 7800))
+
+    win_len = kwargs.get('win_len', None)
+    time_step = kwargs.get('time_step', None)
+
+    use_power = kwargs.get('use_power', True)
+
+    if num_filters is None:
+        if rep == 'envelopes':
+            num_filters = 8
+        else:
+            num_filters = 26
+    if win_len is not None:
+        use_window = True
+    else:
+        use_window = False
+        win_len = 0.025
+    if time_step is None:
+        time_step = 0.01
+
+
+    if rep == 'envelopes':
+        if use_window:
+            to_rep = partial(to_envelopes,
+                                        num_bands=num_filters,
+                                        freq_lims=freq_lims,
+                                        window_length=win_len,
+                                        time_step=time_step)
+        else:
+            to_rep = partial(to_envelopes,num_bands=num_filters,freq_lims=freq_lims)
+    elif rep == 'mfcc':
+        to_rep = partial(to_mfcc,freq_lims=freq_lims,
+                                    num_coeffs=num_coeffs,
+                                    num_filters = num_filters,
+                                    win_len=win_len,
+                                    time_step=time_step,
+                                    use_power = use_power)
+    elif rep == 'mhec':
+        to_rep = partial(to_mhec, freq_lims=freq_lims,
+                                    num_coeffs=num_coeffs,
+                                    num_filters = num_filters,
+                                    window_length=win_len,
+                                    time_step=time_step,
+                                    use_power = use_power)
+    #elif rep == 'gammatone':
+        #if use_window:
+            #to_rep = partial(to_gammatone_envelopes,num_bands = num_filters,
+                                                #freq_lims=freq_lims,
+                                                #window_length=win_len,
+                                                #time_step=time_step)
+        #else:
+            #to_rep = partial(to_gammatone_envelopes,num_bands = num_filters,
+                                                #freq_lims=freq_lims)
+    #elif rep == 'melbank':
+        #to_rep = partial(to_melbank,freq_lims=freq_lims,
+                                    #win_len=win_len,
+                                    #time_step=time_step,
+                                    #num_filters = num_filters)
+    #elif rep == 'prosody':
+        #to_rep = partial(to_prosody,time_step=time_step)
+    return to_rep
 
 def acoustic_similarity_mapping(path_mapping, **kwargs):
     """Takes in an explicit mapping of full paths to .wav files to have
@@ -58,92 +128,28 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
 
     """
 
-    rep = kwargs.get('rep', 'mfcc')
-
-    match_function = kwargs.get('match_function', 'dtw')
-
-    num_filters = kwargs.get('num_filters',None)
-    num_coeffs = kwargs.get('num_coeffs', 20)
-
-    freq_lims = kwargs.get('freq_lims', (80, 7800))
-
-    win_len = kwargs.get('win_len', None)
-    time_step = kwargs.get('time_step', None)
-
-    use_power = kwargs.get('use_power', True)
+    to_rep = _build_to_rep(**kwargs)
 
     num_cores = kwargs.get('num_cores', 1)
 
-    if num_filters is None:
-        if rep == 'envelopes':
-            num_filters = 8
-        else:
-            num_filters = 26
-    if win_len is not None:
-        use_window = True
-    else:
-        use_window = False
-        win_len = 0.025
-    if time_step is None:
-        time_step = 0.01
-    output_values = []
-    total_mappings = len(path_mapping)
-    cache = {}
+    match_function = kwargs.get('dist_func', 'dtw')
+    cache = kwargs.get('cache',None)
     if match_function == 'xcorr':
         dist_func = xcorr_distance
     elif match_function == 'dct':
         dist_func = dct_distance
     else:
         dist_func = dtw_distance
-
-    if rep == 'envelopes':
-        if use_window:
-            to_rep = partial(to_envelopes,
-                                        num_bands=num_filters,
-                                        freq_lims=freq_lims,
-                                        window_length=win_len,
-                                        time_step=time_step)
-        else:
-            to_rep = partial(to_envelopes,num_bands=num_filters,freq_lims=freq_lims)
-    elif rep == 'mfcc':
-        to_rep = partial(to_mfcc,freq_lims=freq_lims,
-                                    num_coeffs=num_coeffs,
-                                    num_filters = num_filters,
-                                    win_len=win_len,
-                                    time_step=time_step,
-                                    use_power = use_power)
-    elif rep == 'mhec':
-        to_rep = partial(to_mhec, freq_lims=freq_lims,
-                                    num_coeffs=num_coeffs,
-                                    num_filters = num_filters,
-                                    window_length=win_len,
-                                    time_step=time_step,
-                                    use_power = use_power)
-    #elif rep == 'gammatone':
-        #if use_window:
-            #to_rep = partial(to_gammatone_envelopes,num_bands = num_filters,
-                                                #freq_lims=freq_lims,
-                                                #window_length=win_len,
-                                                #time_step=time_step)
-        #else:
-            #to_rep = partial(to_gammatone_envelopes,num_bands = num_filters,
-                                                #freq_lims=freq_lims)
-    #elif rep == 'melbank':
-        #to_rep = partial(to_melbank,freq_lims=freq_lims,
-                                    #win_len=win_len,
-                                    #time_step=time_step,
-                                    #num_filters = num_filters)
-    #elif rep == 'prosody':
-        #to_rep = partial(to_prosody,time_step=time_step)
-
-
-    cache = generate_cache(path_mapping, to_rep, num_cores)
+    if cache is None:
+        cache = generate_cache(path_mapping, to_rep, num_cores)
     asim = calc_asim(path_mapping,cache,dist_func,num_cores)
 
     if kwargs.get('return_rep',False):
         return asim, cache
 
     return asim
+
+
 
 def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
     """Computes acoustic similarity across two directories of .wav files.
@@ -217,13 +223,85 @@ def analyze_directory(directory, **kwargs):
     if not os.path.isdir(directory):
         raise(ValueError('%s is not a directory.' % directory))
 
-    files = os.listdir(directory)
+    files = [x for x in os.listdir(directory) if x.lower().endswith('.wav')]
+
+
 
     path_mapping = [ (os.path.join(directory,x),
                         os.path.join(directory,y))
                         for x in files
                         for y in files if x != y]
-    return acoustic_similarity_mapping(path_mapping, **kwargs)
+    cache = kwargs.get('cache', None)
+    if cache is not None:
+        kwargs['cache'] = {k: v['representation'] for k,v in cache.items()}
+    result = acoustic_similarity_mapping(path_mapping, **kwargs)
+    if not isinstance(result,tuple):
+        return result
+
+
+    att_path = os.path.join(directory,'attributes.txt')
+
+
+    scores,reps = result
+    if os.path.exists(att_path):
+        attributes = load_attributes(att_path)
+        for k,v in reps.items():
+            if not isinstance(attributes[k],OrderedDict):
+                print(k)
+                print(attributes[k])
+                raise(ValueError)
+            newdict = attributes[k]
+            newdict.update({'representation':reps[k]})
+
+            reps[k] = newdict
+    else:
+        reps = { k:{'representation':v} for k,v in reps.items()}
+    return scores,reps
+
+def analyze_single_file(path, output_path,**kwargs):
+    from acousticsim.representations.helper import extract_wav
+    to_rep = _build_to_rep(**kwargs)
+
+    time_step = kwargs.get('time_step', 0.01)
+    rep = to_rep(path)
+    print('Created MFCCs')
+    #raise(ValueError)
+    segs = to_segments(rep,debug=True)
+    #print(segs)
+    #print([x*time_step for x in segs])
+    begin = 0
+    for i, s in enumerate(segs):
+        begin_time = begin * time_step
+        end_time = (s+1) * time_step
+        extract_wav(path,os.path.join(output_path,'%d.wav'%i),begin_time,end_time)
+        begin = s+1
+
+
+if __name__ == '__main__':
+    kwarg_dict = {'rep': 'mfcc','freq_lims':(80,7800),'num_coeffs': 20,
+                    'num_filters': 26, 'win_len': 0.025, 'time_step': 0.01,
+                    'use_power': True}
+    analyze_single_file(r"C:\Users\michael\Documents\Data\VIC\Processed\s0101a.wav",
+                        r'C:\Users\michael\Documents\Data\Segs',**kwarg_dict)
+
+def load_attributes(path):
+    from csv import DictReader
+    outdict = OrderedDict()
+    with open(path,'r') as f:
+        reader = DictReader(f,delimiter='\t')
+        for line in reader:
+            name = line['filename']
+            del line['filename']
+            linedict = OrderedDict()
+            for k in reader.fieldnames:
+                if k == 'filename':
+                    continue
+                try:
+                    linedict[k] = float(line[k])
+                except ValueError:
+                    linedict[k] = line[k]
+            outdict[name] = linedict
+    return outdict
 
 def rep_worker(job_q,return_dict,rep_func):
     while True:

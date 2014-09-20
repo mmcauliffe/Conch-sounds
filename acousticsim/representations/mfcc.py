@@ -1,7 +1,10 @@
-from numpy import log,array,zeros, floor,exp,sqrt,dot,arange, hanning,sin, pi,linspace,log10,round,maximum,minimum,sum,cos,spacing,diag
+from numpy import (pad,log,array,zeros, floor,exp,sqrt,dot,arange,
+                    hanning,sin, pi,linspace,log10,round,maximum,minimum,
+                    sum,cos,spacing,diag,ceil)
 from numpy.fft import fft
 
 from acousticsim.representations.helper import preproc
+from acousticsim.representations.specgram import to_powerspec
 
 from scipy.fftpack import dct
 from scipy.io import wavfile
@@ -38,16 +41,16 @@ def filter_bank(nfft,nfilt,minFreq,maxFreq,sr):
     binfreqs = melToFreq(melPoints)
     bins = round((nfft-1)*binfreqs/sr)
 
-    fftfreqs = arange(int(nfft/2))/nfft * sr
+    fftfreqs = arange(int(nfft/2+1))/nfft * sr
 
-    fbank = zeros([nfilt,int(nfft/2)])
+    fbank = zeros((nfilt,int(nfft/2 +1)))
     for i in range(nfilt):
         fs = binfreqs[i+arange(3)]
         fs = fs[1] + (fs - fs[1])
         loslope = (fftfreqs - fs[0])/(fs[1] - fs[0])
         highslope = (fs[2] - fftfreqs)/(fs[2] - fs[1])
         fbank[i,:] = maximum(zeros(loslope.shape),minimum(loslope,highslope))
-    fbank = fbank / max(sum(fbank,axis=1))
+    #fbank = fbank / max(sum(fbank,axis=1))
     return fbank.transpose()
 
 def freqToMel(freq):
@@ -119,7 +122,7 @@ def to_melbank(filename, freq_lims,win_len,time_step,num_filters = 26):
 
     filterbank = filter_bank(nperseg,num_filters,minHz,maxHz,sr)
     step = nperseg - noverlap
-    indices = arange(0, proc.shape[-1]-nperseg+1, step)
+    indices = arange(0, proc.shape[0]-nperseg+1, step)
     num_frames = len(indices)
 
     melbank = zeros((num_frames,num_filters))
@@ -130,8 +133,26 @@ def to_melbank(filename, freq_lims,win_len,time_step,num_filters = 26):
         melbank[k,:] = dot(sqrt(powerSpectrum), filterbank)**2
     return melbank
 
+def to_powerspec(x, sr, win_len, time_step):
+    nperseg = int(win_len*sr)
+    nperstep = int(time_step*sr)
+    nfft = int(2**(ceil(log(nperseg)/log(2))))
+    window = hanning(nperseg+2)[1:nperseg+1]
 
-def to_mfcc(filename, freq_lims,num_coeffs,win_len,time_step,num_filters = 26, use_power = False):
+    indices = arange(int(nperseg/2), x.shape[0] - int(nperseg/2) + 1, nperstep)
+    num_frames = len(indices)
+
+    pspec = zeros((num_frames,int(nfft/2)+1))
+    for i in range(num_frames):
+        X = x[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
+        X = X * window
+        fx = fft(X, n = nfft)
+        power = abs(fx[:int(nfft/2)+1])**2
+        pspec[i,:] = power
+    return pspec
+
+
+def to_mfcc(filename, freq_lims,num_coeffs,win_len,time_step,num_filters = 26, use_power = False,debug=False):
     """Generate MFCCs in the style of HTK from a full path to a .wav file.
 
     Parameters
@@ -169,26 +190,25 @@ def to_mfcc(filename, freq_lims,num_coeffs,win_len,time_step,num_filters = 26, u
     lift = 1+ (L/2)*sin(pi*n/L)
     lift = diag(lift)
 
-    nperseg = int(win_len*sr)
-    noverlap = int(time_step*sr)
-    window = hanning(nperseg+2)[1:nperseg+1]
+    pspec = to_powerspec(proc,sr,win_len,time_step)
 
-    filterbank = filter_bank(nperseg,num_filters,minHz,maxHz,sr)
-    step = nperseg - noverlap
-    indices = arange(0, proc.shape[0]-nperseg+1, step)
-    num_frames = len(indices)
+    filterbank = filter_bank((pspec.shape[1]-1) * 2,num_filters,minHz,maxHz,sr)
+
+
+    num_frames = pspec.shape[0]
 
     mfccs = zeros((num_frames,num_coeffs))
-    for k,ind in enumerate(indices):
-        seg = proc[ind:ind+nperseg] * window
-        complexSpectrum = fft(seg)
-        powerishSpectrum = abs(complexSpectrum[:int(nperseg/2)])
-        filteredSpectrum = dot(powerishSpectrum, filterbank)**2
+    aspec =zeros((num_frames,num_filters))
+    for k in range(num_frames):
+        filteredSpectrum = dot(sqrt(pspec[k,:]), filterbank)**2
+        aspec[k,:] = filteredSpectrum
         dctSpectrum = dct_spectrum(filteredSpectrum)
         dctSpectrum = dot(dctSpectrum , lift)
         if not use_power:
             dctSpectrum = dctSpectrum[1:]
         mfccs[k,:] = dctSpectrum[:num_coeffs]
+    if debug:
+        return mfccs,pspec,aspec
     return mfccs
 
 

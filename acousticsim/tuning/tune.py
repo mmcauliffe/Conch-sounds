@@ -113,7 +113,7 @@ match_algorithm = ['xcorr','dtw','dct']
 
 use_ati = True
 use_nz = True
-use_aic = True
+use_aic = False
 
 if use_aic:
     best = inf
