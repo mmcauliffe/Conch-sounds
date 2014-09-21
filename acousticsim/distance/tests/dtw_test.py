@@ -4,18 +4,14 @@ from numpy import array
 import unittest
 import os
 try:
-    from corpustools.acousticsim.distance_functions import (dtw_distance,
-                                        generate_distance_matrix,
-                                        xcorr_distance)
+    from acousticsim.distance.dtw import dtw_distance,generate_distance_matrix
 except ImportError:
     import sys
 
     test_dir = os.path.dirname(os.path.abspath(__file__))
-    corpustools_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
-    sys.path.append(corpustools_path)
-    from corpustools.acousticsim.distance_functions import (dtw_distance,
-                                        generate_distance_matrix,
-                                        xcorr_distance)
+    test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
+    sys.path.append(test_path)
+    from acousticsim.distance.dtw import dtw_distance,generate_distance_matrix
 
 class DTWTest(unittest.TestCase):
     def setUp(self):

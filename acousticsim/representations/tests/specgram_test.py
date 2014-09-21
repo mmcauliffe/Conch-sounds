@@ -10,8 +10,8 @@ except ImportError:
     import sys
 
     test_dir = os.path.dirname(os.path.abspath(__file__))
-    corpustools_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
-    sys.path.append(corpustools_path)
+    test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
+    sys.path.append(test_path)
     from acousticsim.representations.specgram import (to_specgram, to_powerspec)
 
 
