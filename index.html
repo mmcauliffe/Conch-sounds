@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Python-acoustic-similarity : Linguistic signal processing in Python">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Python-acoustic-similarity</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/mmcauliffe/python-acoustic-similarity">View on GitHub</a>
+
+          <h1 id="project_title">Python-acoustic-similarity</h1>
+          <h2 id="project_tagline">Linguistic signal processing in Python</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/mmcauliffe/python-acoustic-similarity/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/mmcauliffe/python-acoustic-similarity/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="python-acoustic-similarity" class="anchor" href="#python-acoustic-similarity"><span class="octicon octicon-link"></span></a>python-acoustic-similarity</h1>
+
+<p>This package contains functions for converting wav files into auditory and linguistic
+representations and calculating distance between them.</p>
+
+<p>Auditory representations currently supported are mel-frequency cepstrum
+coefficients (MFCCs) and amplitude envelopes.</p>
+
+<p>Distance metrics currently implemented are dynamic time warping and inverse
+cross-correlation.</p>
+
+<h1>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h1>
+
+<ol>
+<li>This package requires numpy and scipy to be installed.  Precompiled 
+Windows binaries can be found at <a href="http://www.lfd.uci.edu/%7Egohlke/pythonlibs/">http://www.lfd.uci.edu/~gohlke/pythonlibs/</a>.
+Further information is available at <a href="http://www.scipy.org/install.html">http://www.scipy.org/install.html</a>
+</li>
+<li>Clone the repository or download the zip file.</li>
+<li> In the root directory of the repository, enter <code>python setup.py install</code>.</li>
+</ol><h1>
+<a name="higher-level-wrappers" class="anchor" href="#higher-level-wrappers"><span class="octicon octicon-link"></span></a>Higher level wrappers</h1>
+
+<p>In <code>acousticsim/main.py</code> there are several wrapper functions for convenience.</p>
+
+<p>Each of these functions takes keyword arguments corresponding to how auditory
+representations should be constructed and what distance function to use.</p>
+
+<p><strong>acoustic_similarity_mapping</strong> takes a mapping of paths as its argument.
+This argument should be a list of pairs or triplets of fully specified filenames.
+Pairs will compute the distance between the two files, and triplets will compute
+an AXB style design, where distances are computed between the first element and the second and
+between the third element and the second.  In this case, the numerical output
+will be a ratio of the third element's distance to the second divided by the
+first element's distance to the second.  The return value is a dictionary
+with the pairs/triplets as keys, and the numerical output as the values.</p>
+
+<p><strong>acoustic_similarity_directories</strong> takes two arguments which are fully specified paths
+to two directories.  It then constructs a path mapping of all the files in
+the first directory to all the files in the second directory.  The return
+value is a single value, which the average distance of all those calculated.</p>
+
+<p><strong>analyze_directory</strong> takes a single directory as an argument and creates a
+path mapping of all the files compared to all other files. The return value is a dictionary
+with the file pairs as keys, and the numerical output as the values.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Python-acoustic-similarity maintained by <a href="https://github.com/mmcauliffe">mmcauliffe</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
