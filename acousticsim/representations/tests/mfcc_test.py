@@ -14,10 +14,6 @@ except ImportError:
     sys.path.append(test_path)
     from acousticsim.representations.mfcc import to_mfcc
 
-
-
-from scipy.spatial.distance import euclidean
-
 from scipy.io import loadmat
 
 from numpy.testing import assert_array_almost_equal

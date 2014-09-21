@@ -1,6 +1,8 @@
 from numpy import pi,exp,log,abs,sum,sqrt,array, hanning, arange, zeros,cos,ceil,mean
 
-from scipy.signal import filtfilt,butter,hilbert,resample
+from scipy.signal import filtfilt,butter,hilbert
+
+from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc,make_erb_cfs,nextpow2,fftfilt
 
 
@@ -28,3 +30,6 @@ def to_gammatone(path,num_bands,freq_lims):
         env = abs(hilbert(bm))
         envelopes.append(env)
     return array(bms).T,array(envelopes).T
+
+class Gammatone(Representation):
+    pass

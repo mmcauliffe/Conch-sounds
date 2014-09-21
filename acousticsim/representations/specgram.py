@@ -3,6 +3,7 @@ from numpy import log10,zeros,abs,arange, hanning, pad, spacing, ceil, log
 from numpy.fft import fft
 
 
+from acousticsim.representations.base import Representation
 from .helper import preproc
 
 
@@ -41,3 +42,6 @@ def to_specgram(filename,win_len,time_step=None):
         dbspec[k,:] = 10 * log10(pspec[k,:] + spacing(1))
 
     return spec,freqs,times
+
+class Spectrogram(Representation):
+    pass

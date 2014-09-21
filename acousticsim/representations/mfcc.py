@@ -3,6 +3,7 @@ from numpy import (pad,log,array,zeros, floor,exp,sqrt,dot,arange,
                     sum,cos,spacing,diag,ceil)
 from numpy.fft import fft
 
+from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc
 from acousticsim.representations.specgram import to_powerspec
 
@@ -211,5 +212,6 @@ def to_mfcc(filename, freq_lims,num_coeffs,win_len,time_step,num_filters = 26, u
         return mfccs,pspec,aspec
     return mfccs
 
-
+class Mfcc(Representation):
+    pass
 

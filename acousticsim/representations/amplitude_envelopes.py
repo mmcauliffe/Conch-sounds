@@ -1,6 +1,8 @@
 from numpy import pi,exp,log,abs,sum,sqrt,array, hanning, arange, zeros,cos,ceil,mean
 
 from scipy.signal import filtfilt,butter,hilbert,decimate
+
+from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc,make_erb_cfs,nextpow2,fftfilt
 
 def to_envelopes(path,num_bands,freq_lims,downsample=True):
@@ -61,3 +63,5 @@ def window_envelopes(env,sr, win_len, time_step):
             rep[k,b] = sum(env[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2),b])
     return rep
 
+class Envelopes(Representation):
+    pass
