@@ -38,10 +38,10 @@ def to_specgram(filename,win_len,time_step=None):
     freqs = (sr / nfft) * arange(pspec.shape[1])
     times = (arange(pspec.shape[0]) * time_step) + (win_len/2)
     dbspec = zeros(pspec.shape)
-    for i in range(dbspec.shape[0]):
+    for k in range(dbspec.shape[0]):
         dbspec[k,:] = 10 * log10(pspec[k,:] + spacing(1))
 
-    return spec,freqs,times
+    return dbspec,freqs,times
 
 class Spectrogram(Representation):
     pass

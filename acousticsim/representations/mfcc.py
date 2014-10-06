@@ -134,25 +134,6 @@ def to_melbank(filename, freq_lims,win_len,time_step,num_filters = 26):
         melbank[k,:] = dot(sqrt(powerSpectrum), filterbank)**2
     return melbank
 
-def to_powerspec(x, sr, win_len, time_step):
-    nperseg = int(win_len*sr)
-    nperstep = int(time_step*sr)
-    nfft = int(2**(ceil(log(nperseg)/log(2))))
-    window = hanning(nperseg+2)[1:nperseg+1]
-
-    indices = arange(int(nperseg/2), x.shape[0] - int(nperseg/2) + 1, nperstep)
-    num_frames = len(indices)
-
-    pspec = zeros((num_frames,int(nfft/2)+1))
-    for i in range(num_frames):
-        X = x[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
-        X = X * window
-        fx = fft(X, n = nfft)
-        power = abs(fx[:int(nfft/2)+1])**2
-        pspec[i,:] = power
-    return pspec
-
-
 def to_mfcc(filename, freq_lims,num_coeffs,win_len,time_step,num_filters = 26, use_power = False,debug=False):
     """Generate MFCCs in the style of HTK from a full path to a .wav file.
 

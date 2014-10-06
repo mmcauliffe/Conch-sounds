@@ -40,6 +40,9 @@ class EnvelopeTest(unittest.TestCase):
             m = loadmat(matpath)
             print(list(m.keys()))
             env = to_envelopes(wavpath, self.num_bands,self.freq_lims)
+            for i in range(self.num_bands):
+                denom = sqrt(sum(env[:,i]**2))
+                env[:,i] = env[:,i]/denom
             assert_array_almost_equal(m['env1'],env)
 
 

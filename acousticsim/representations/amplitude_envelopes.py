@@ -1,6 +1,6 @@
 from numpy import pi,exp,log,abs,sum,sqrt,array, hanning, arange, zeros,cos,ceil,mean
 
-from scipy.signal import filtfilt,butter,hilbert,decimate
+from scipy.signal import filtfilt,butter,hilbert,decimate, resample
 
 from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc,make_erb_cfs,nextpow2,fftfilt
@@ -34,6 +34,8 @@ def to_envelopes(path,num_bands,freq_lims,downsample=True):
 
     """
     sr, proc = preproc(path,alpha=0.97)
+
+    #proc = proc / 32768 #hack!! for 16-bit pcm
     proc = proc/sqrt(mean(proc**2))*0.03;
     bandLo = [ freq_lims[0]*exp(log(freq_lims[1]/freq_lims[0])/num_bands)**x for x in range(num_bands)]
     bandHi = [ freq_lims[0]*exp(log(freq_lims[1]/freq_lims[0])/num_bands)**(x+1) for x in range(num_bands)]
@@ -44,7 +46,8 @@ def to_envelopes(path,num_bands,freq_lims,downsample=True):
         env = filtfilt(b,a,proc)
         env = abs(hilbert(env))
         if downsample:
-            env = decimate(env,int(ceil(sr/120)))
+            env = resample(env,int(ceil(len(env)/int(ceil(sr/120)))))
+            #env = decimate(env,int(ceil(sr/120)))
         envelopes.append(env)
     return array(envelopes).T
 

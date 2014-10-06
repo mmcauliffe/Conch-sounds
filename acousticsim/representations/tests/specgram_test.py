@@ -1,7 +1,5 @@
 
 
-from numpy import array,sum,sqrt
-from numpy.linalg import norm
 import unittest
 import os
 try:

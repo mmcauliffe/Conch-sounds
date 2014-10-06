@@ -41,14 +41,9 @@ def _build_to_rep(**kwargs):
 
 
     if rep == 'envelopes':
-        if use_window:
-            to_rep = partial(to_envelopes,
-                                        num_bands=num_filters,
-                                        freq_lims=freq_lims,
-                                        window_length=win_len,
-                                        time_step=time_step)
-        else:
-            to_rep = partial(to_envelopes,num_bands=num_filters,freq_lims=freq_lims)
+        to_rep = partial(to_envelopes,
+                                num_bands=num_filters,
+                                freq_lims=freq_lims, downsample=True)
     elif rep == 'mfcc':
         to_rep = partial(to_mfcc,freq_lims=freq_lims,
                                     num_coeffs=num_coeffs,
@@ -132,7 +127,7 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
 
     num_cores = kwargs.get('num_cores', 1)
 
-    match_function = kwargs.get('dist_func', 'dtw')
+    match_function = kwargs.get('match_function', 'dtw')
     cache = kwargs.get('cache',None)
     if match_function == 'xcorr':
         dist_func = xcorr_distance
@@ -209,7 +204,7 @@ def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
                         for x in files_one
                         for y in files_two]
     output = acoustic_similarity_mapping(path_mapping, **kwargs)
-    output_val = sum([x[1] for x in output]) / len(output)
+    output_val = sum([x for x in output.values()]) / len(output.values())
 
     threaded_q = kwargs.get('threaded_q', None)
     if not threaded_q:

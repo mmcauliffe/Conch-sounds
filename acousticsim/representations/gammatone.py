@@ -8,6 +8,8 @@ from acousticsim.representations.helper import preproc,make_erb_cfs,nextpow2,fft
 
 def to_gammatone(path,num_bands,freq_lims):
     sr, proc = preproc(path,alpha=0)
+
+    proc = proc / 32768 #hack!! for 16-bit pcm
     cfs = make_erb_cfs(freq_lims,num_bands)
 
     filterOrder = 4 # filter order
