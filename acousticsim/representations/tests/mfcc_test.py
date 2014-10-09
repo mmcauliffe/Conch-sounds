@@ -9,7 +9,7 @@ except ImportError:
     test_dir = os.path.dirname(os.path.abspath(__file__))
     test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
     sys.path.append(test_path)
-    from acousticsim.representations.mfcc import to_mfcc
+    from acousticsim.representations.mfcc import Mfcc
 
 from scipy.io import loadmat
 
@@ -35,13 +35,13 @@ class MfccTest(unittest.TestCase):
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             matpath = os.path.join(TEST_DIR,f+'_mfcc.mat')
             m = loadmat(matpath)
-            mfcc,pspec,aspec = to_mfcc(wavpath,self.freq_lims,self.numCC,self.winLen,
+            mfcc = Mfcc(wavpath,self.freq_lims,self.numCC,self.winLen,
                                     self.timeStep,num_filters=self.num_filters,
-                                    debug = True,
                                     use_power=True
                                     )
-            assert_array_almost_equal(m['aspectrum'].T,aspec,decimal=4)
-            assert_array_almost_equal(m['cepstra'].T,mfcc)
+
+            #assert_array_almost_equal(m['aspectrum'].T,aspec,decimal=4)
+            assert_array_almost_equal(m['cepstra'].T,mfcc._rep)
 
 if __name__ == '__main__':
     unittest.main()
