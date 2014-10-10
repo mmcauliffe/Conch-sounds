@@ -69,12 +69,12 @@ def dct_spectrum(spec):
 class Mfcc(Representation):
     def __init__(self, filepath, freq_lims, num_coeffs, win_len,
                         time_step, num_filters = 26, use_power = False,
-                        attributes={}):
+                        attributes=None):
         Representation.__init__(self,filepath, freq_lims, attributes)
         self._num_coeffs = num_coeffs
         self._win_len = win_len
         self._time_step = time_step
-        self._num_filters = 26
+        self._num_filters = num_filters
         self._use_power = use_power
 
         self.process()
@@ -125,7 +125,7 @@ class Mfcc(Representation):
         #fbank = fbank / max(sum(fbank,axis=1))
         return fbank.transpose()
 
-    def process(self):
+    def process(self,debug = True):
         """Generate MFCCs in the style of HTK from a full path to a .wav file.
 
         Parameters
@@ -177,4 +177,6 @@ class Mfcc(Representation):
             if not self._use_power:
                 dctSpectrum = dctSpectrum[1:]
             self._rep[k,:] = dctSpectrum[:self._num_coeffs]
-        self._rep.transpose()
+        if debug:
+            return pspec,aspec
+        #self._rep.transpose()

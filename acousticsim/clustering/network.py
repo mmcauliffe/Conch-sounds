@@ -4,6 +4,8 @@ from collections import OrderedDict
 from numpy import zeros, array, abs
 from numpy.random import RandomState
 
+from sklearn import metrics
+
 from networkx import Graph, empty_graph
 from sklearn import manifold
 from sklearn.decomposition import PCA
@@ -19,12 +21,10 @@ class ClusterNetwork(object):
         self.attributes = None
         for i,r in enumerate(sorted(reps.keys())):
             self.lookup[r] = i
-            node_dict = OrderedDict({'label':r})
-            for k,v in reps[r].items():
-                node_dict[k] = v
             if self.attributes is None:
-                self.attributes = [x for x in node_dict.keys() if x != 'representation']
-            nodes.append((i,node_dict))
+                print(reps[r]._attributes)
+                self.attributes = list(reps[r]._attributes.keys())
+            nodes.append((i,{'rep':reps[r]}))
         self.g.add_nodes_from(nodes)
         self.clusters = None
 
@@ -55,7 +55,8 @@ class ClusterNetwork(object):
                 self.simMat[indTwo,indOne] = v
             self.simMat = -1 * self.simMat
         if cluster_method == 'affinity':
-            self.clusters = affinity_cluster(self.simMat,oneCluster)
+            true_labels = array([ self[i]['rep']._true_label for i in range(self.N)])
+            self.clusters = affinity_cluster(self.simMat,true_labels,oneCluster)
             edges = []
             for k,v in self.clusters.items():
                 for v2 in v:
@@ -104,3 +105,40 @@ class ClusterNetwork(object):
 
     def get_edges(self):
         return array(self.g.edges(data=False))
+
+    def labels(self):
+        labels = list(range(len(self.g)))
+        for k,v in self.clusters.items():
+            for v2 in v:
+                labels[v2[0]] = k
+        true_labels = list()
+        for i in range(len(labels)):
+            true_labels.append(self[i]['rep']._true_label)
+        levels = {x:i for i,x in enumerate(set(true_labels))}
+        for i in range(len(true_labels)):
+            true_labels[i] = levels[true_labels[i]]
+        return array(labels),array(true_labels)
+
+    def silhouette_coefficient(self):
+        labels,true_labels = self.labels()
+        return metrics.silhouette_score(self.simMat, labels, metric = 'precomputed')
+
+    def homogeneity(self):
+        labels,true_labels = self.labels()
+        return metrics.homogeneity_score(true_labels, labels)
+
+    def completeness(self):
+        labels,true_labels = self.labels()
+        return metrics.completeness_score(true_labels, labels)
+
+    def v_score(self):
+        labels,true_labels = self.labels()
+        return metrics.v_measure_score(true_labels, labels)
+
+    def adjusted_mutual_information(self):
+        labels,true_labels = self.labels()
+        return metrics.adjusted_mutual_info_score(true_labels, labels)
+
+    def adjusted_rand_score(self):
+        labels,true_labels = self.labels()
+        return metrics.adjusted_rand_score(true_labels, labels)

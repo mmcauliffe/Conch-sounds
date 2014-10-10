@@ -5,14 +5,14 @@ from numpy.linalg import norm
 import unittest
 import os
 try:
-    from acousticsim.representations import to_envelopes
+    from acousticsim.representations.amplitude_envelopes import Envelopes
 except ImportError:
     import sys
 
     test_dir = os.path.dirname(os.path.abspath(__file__))
     test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
     sys.path.append(test_path)
-    from acousticsim.representations import to_envelopes
+    from acousticsim.representations.amplitude_envelopes import Envelopes
 
 
 from scipy.io import loadmat
@@ -38,12 +38,11 @@ class EnvelopeTest(unittest.TestCase):
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             matpath = os.path.join(TEST_DIR,f+'_lewandowski_env.mat')
             m = loadmat(matpath)
-            print(list(m.keys()))
-            env = to_envelopes(wavpath, self.num_bands,self.freq_lims)
-            for i in range(self.num_bands):
-                denom = sqrt(sum(env[:,i]**2))
-                env[:,i] = env[:,i]/denom
-            assert_array_almost_equal(m['env1'],env)
+            env = Envelopes(wavpath,self.freq_lims, self.num_bands)
+            #for i in range(self.num_bands):
+            #    denom = sqrt(sum(env[:,i]**2))
+            #    env[:,i] = env[:,i]/denom
+            assert_array_almost_equal(m['env1'],env._rep)
 
 
 if __name__ == '__main__':

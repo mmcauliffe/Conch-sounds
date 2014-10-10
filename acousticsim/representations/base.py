@@ -9,6 +9,8 @@ class Representation(object):
     _attributes = None
 
     def __init__(self,filepath, freq_lims, attributes):
+        if attributes is None:
+            attributes = dict()
         self._filepath = filepath
         self._freq_lims = freq_lims
         self._attributes = attributes
@@ -30,4 +32,4 @@ class Representation(object):
 
     @property
     def shape(self):
-        return _rep.shape
+        return self._rep.shape

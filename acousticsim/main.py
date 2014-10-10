@@ -8,7 +8,7 @@ from numpy import zeros
 
 from functools import partial
 
-from acousticsim.representations import to_envelopes, to_mfcc, to_mhec, to_segments
+from acousticsim.representations import Envelopes, Mfcc
 
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
@@ -41,23 +41,23 @@ def _build_to_rep(**kwargs):
 
 
     if rep == 'envelopes':
-        to_rep = partial(to_envelopes,
+        to_rep = partial(Envelopes,
                                 num_bands=num_filters,
-                                freq_lims=freq_lims, downsample=True)
+                                freq_lims=freq_lims)
     elif rep == 'mfcc':
-        to_rep = partial(to_mfcc,freq_lims=freq_lims,
+        to_rep = partial(Mfcc,freq_lims=freq_lims,
                                     num_coeffs=num_coeffs,
                                     num_filters = num_filters,
                                     win_len=win_len,
                                     time_step=time_step,
                                     use_power = use_power)
-    elif rep == 'mhec':
-        to_rep = partial(to_mhec, freq_lims=freq_lims,
-                                    num_coeffs=num_coeffs,
-                                    num_filters = num_filters,
-                                    window_length=win_len,
-                                    time_step=time_step,
-                                    use_power = use_power)
+    #elif rep == 'mhec':
+    #    to_rep = partial(to_mhec, freq_lims=freq_lims,
+    #                                num_coeffs=num_coeffs,
+    #                                num_filters = num_filters,
+    #                                window_length=win_len,
+    #                                time_step=time_step,
+    #                                use_power = use_power)
     #elif rep == 'gammatone':
         #if use_window:
             #to_rep = partial(to_gammatone_envelopes,num_bands = num_filters,
@@ -126,6 +126,7 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
     to_rep = _build_to_rep(**kwargs)
 
     num_cores = kwargs.get('num_cores', 1)
+    attributes = kwargs.get('attributes',dict())
 
     match_function = kwargs.get('match_function', 'dtw')
     cache = kwargs.get('cache',None)
@@ -136,7 +137,7 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
     else:
         dist_func = dtw_distance
     if cache is None:
-        cache = generate_cache(path_mapping, to_rep, num_cores)
+        cache = generate_cache(path_mapping, to_rep, num_cores, attributes)
     asim = calc_asim(path_mapping,cache,dist_func,num_cores)
 
     if kwargs.get('return_rep',False):
@@ -213,45 +214,44 @@ def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
         threaded_q.put(output_val)
         return None
 
-def analyze_directory(directory, **kwargs):
+def analyze_directories(directories, **kwargs):
 
-    if not os.path.isdir(directory):
-        raise(ValueError('%s is not a directory.' % directory))
+    files = []
+    kwargs['attributes'] = dict()
+    for d in directories:
+        if not os.path.isdir(d):
+            continue
 
-    files = [x for x in os.listdir(directory) if x.lower().endswith('.wav')]
+        files += [os.path.join(d,x) for x in os.listdir(d) if x.lower().endswith('.wav')]
+
+        att_path = os.path.join(d,'attributes.txt')
+        if os.path.exists(att_path):
+            kwargs['attributes'].update(load_attributes(att_path))
 
 
-
-    path_mapping = [ (os.path.join(directory,x),
-                        os.path.join(directory,y))
+    path_mapping = [ (x,y)
                         for x in files
                         for y in files if x != y]
-    cache = kwargs.get('cache', None)
-    if cache is not None:
-        kwargs['cache'] = {k: v['representation'] for k,v in cache.items()}
     result = acoustic_similarity_mapping(path_mapping, **kwargs)
-    if not isinstance(result,tuple):
-        return result
+    return result
 
+def analyze_directory(directory, **kwargs):
+    kwargs['attributes'] = dict()
+    all_files = [os.path.join(directory,x) for x in os.listdir(directory)]
+    wavs = list(filter(lambda x: x.lower().endswith('.wav'),all_files))
+    if not wavs:
+        directories = filter(lambda x: os.path.isdir(x),all_files)
+        return analyze_directories(directories, **kwargs)
 
     att_path = os.path.join(directory,'attributes.txt')
-
-
-    scores,reps = result
     if os.path.exists(att_path):
-        attributes = load_attributes(att_path)
-        for k,v in reps.items():
-            if not isinstance(attributes[k],OrderedDict):
-                print(k)
-                print(attributes[k])
-                raise(ValueError)
-            newdict = attributes[k]
-            newdict.update({'representation':reps[k]})
+        kwargs['attributes'].update(load_attributes(att_path))
 
-            reps[k] = newdict
-    else:
-        reps = { k:{'representation':v} for k,v in reps.items()}
-    return scores,reps
+    path_mapping = [ (x,y)
+                        for x in wavs
+                        for y in wavs if x != y]
+    result = acoustic_similarity_mapping(path_mapping, **kwargs)
+    return result
 
 def analyze_single_file(path, output_path,**kwargs):
     from acousticsim.representations.helper import extract_wav
@@ -298,16 +298,25 @@ def load_attributes(path):
             outdict[name] = linedict
     return outdict
 
-def rep_worker(job_q,return_dict,rep_func):
+def rep_worker(job_q,return_dict,rep_func,attributes):
     while True:
         try:
             filename = job_q.get(timeout=1)
         except Empty:
             break
-        rep = rep_func(filename)
+        path, filelabel = os.path.split(filename)
+        att = OrderedDict()
+        att['filename'] = filelabel
+        try:
+            att.update(attributes[filelabel])
+        except KeyError:
+            pass
+        true_label = os.path.split(path)[1]
+        rep = rep_func(filename,attributes=att)
+        rep._true_label = true_label
         return_dict[os.path.split(filename)[1]] = rep
 
-def generate_cache(path_mapping,rep_func,num_procs):
+def generate_cache(path_mapping,rep_func,num_procs, attributes):
     all_files = set()
     for pm in path_mapping:
         all_files.update(pm)
@@ -324,7 +333,7 @@ def generate_cache(path_mapping,rep_func,num_procs):
         p = Process(
                 target=rep_worker,
                 args=(job_queue,
-                      return_dict,rep_func))
+                      return_dict,rep_func,attributes))
         procs.append(p)
         p.start()
     time.sleep(10)
