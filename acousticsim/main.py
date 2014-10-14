@@ -240,7 +240,7 @@ def analyze_directory(directory, **kwargs):
     all_files = [os.path.join(directory,x) for x in os.listdir(directory)]
     wavs = list(filter(lambda x: x.lower().endswith('.wav'),all_files))
     if not wavs:
-        directories = filter(lambda x: os.path.isdir(x),all_files)
+        directories = list(filter(lambda x: os.path.isdir(x),all_files))
         return analyze_directories(directories, **kwargs)
 
     att_path = os.path.join(directory,'attributes.txt')
@@ -361,6 +361,10 @@ def dist_worker(job_q,return_dict,dist_func,axb,cache):
 
         return_dict[filetup] = ratio
 
+def queue_adder(path_mapping,queue):
+    for pm in path_mapping:
+        queue.put(pm,timeout=30)
+
 def calc_asim(path_mapping, cache,dist_func,num_procs):
     if len(path_mapping[0]) == 3:
         axb = True
@@ -369,9 +373,10 @@ def calc_asim(path_mapping, cache,dist_func,num_procs):
 
     job_queue = Queue()
 
-    for pm in path_mapping:
-        job_queue.put(pm)
-
+    job_p = Process(target=queue_adder,
+                    args = (path_mapping,job_queue))
+    job_p.start()
+    time.sleep(2)
     manager = Manager()
     return_dict = manager.dict()
     procs = []
@@ -382,7 +387,8 @@ def calc_asim(path_mapping, cache,dist_func,num_procs):
                       return_dict,dist_func,axb,cache))
         procs.append(p)
         p.start()
-    time.sleep(10)
+    time.sleep(2)
+    job_p.join()
     for p in procs:
         p.join()
 

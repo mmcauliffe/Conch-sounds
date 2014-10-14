@@ -26,7 +26,8 @@ setup(name='acousticsim',
       packages=['acousticsim', 
                 'acousticsim.distance',
                 'acousticsim.representations',
-                'acousticsim.tuning'],
+                'acousticsim.tuning',
+                'acousticsim.clustering'],
       install_requires=[
             'numpy',
             'scipy'

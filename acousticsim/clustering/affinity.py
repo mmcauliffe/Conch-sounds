@@ -8,23 +8,18 @@ def affinity_cluster(simMat, true_labels, oneCluster):
         levels = set(true_labels)
         clusters = dict()
         for w in levels:
-            print(w)
             label_mapping = arange(len(true_labels))[true_labels == w]
-            print(label_mapping)
             #subSimMat = simMat[true_labels == w, true_labels == w]
             subSimMat = zeros((len(label_mapping),len(label_mapping)))
             for ix,x in enumerate(label_mapping):
                 for iy,y in enumerate(label_mapping):
                     subSimMat[ix,iy] = simMat[x,y]
-            print(subSimMat.shape)
-            print(simMat.shape)
             pref = subSimMat.min() * 2.5
             af = AffinityPropagation(
                 affinity = 'precomputed',
-                preference=pref, verbose = True
+                preference=pref
                 ).fit(subSimMat)
             cluster_centers_indices = af.cluster_centers_indices_
-            print(af)
             n_clusters_ = len(cluster_centers_indices)
             labels = af.labels_
 

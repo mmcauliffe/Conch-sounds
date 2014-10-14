@@ -22,7 +22,6 @@ class ClusterNetwork(object):
         for i,r in enumerate(sorted(reps.keys())):
             self.lookup[r] = i
             if self.attributes is None:
-                print(reps[r]._attributes)
                 self.attributes = list(reps[r]._attributes.keys())
             nodes.append((i,{'rep':reps[r]}))
         self.g.add_nodes_from(nodes)
@@ -38,6 +37,8 @@ class ClusterNetwork(object):
     def __getitem__(self, key):
         if isinstance(key,str):
             return self.g.node[self.lookup[key]]
+        elif isinstance(key,tuple):
+            return self.simMat[key]
         return self.g.node[key]
 
     def cluster(self,scores,cluster_method,oneCluster):
