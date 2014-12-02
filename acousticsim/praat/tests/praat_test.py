@@ -1,7 +1,4 @@
 
-
-from numpy import array,sum,sqrt
-from numpy.linalg import norm
 import unittest
 import os
 import sys
@@ -9,8 +6,7 @@ import sys
 test_dir = os.path.dirname(os.path.abspath(__file__))
 test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
 sys.path.insert(0,test_path)
-from acousticsim.representations.formants import LpcFormants
-
+from acousticsim.praat import to_formants_praat, to_pitch_praat, to_intensity_praat
 
 from numpy.testing import assert_array_almost_equal
 
@@ -22,7 +18,9 @@ filenames = ['s01_s0101a_big_910','s01_s0101a_care_1188',
             's01_s0101a_come_340','s01_s0101a_dad_497',
             's01_s0101a_good_412','s01_s0101a_hall_99']
 
-class LpcFormantsTest(unittest.TestCase):
+praatpath = r'C:\Users\michael\Documents\Praat\praatcon.exe'
+
+class PraatFormantsTest(unittest.TestCase):
     def setUp(self):
         self.num_formants = 5
         self.max_freq = 5500
@@ -34,8 +32,27 @@ class LpcFormantsTest(unittest.TestCase):
         for f in filenames:
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
-            formants = LpcFormants(wavpath,self.max_freq, self.num_formants, self.win_len,self.time_step)
+            formants = to_formants_praat(praatpath,wavpath,self.time_step, self.win_len, self.num_formants,self.max_freq)
             print(formants.rep())
+
+class PraatPitchTest(unittest.TestCase):
+    def setUp(self):
+        self.max_freq = 600
+        self.min_freq = 75
+        self.time_step = 0.01
+
+    def test_ac(self):
+
+        for f in filenames:
+            wavpath = os.path.join(TEST_DIR,f+'.wav')
+            print(f)
+            pitch = to_pitch_praat(praatpath,wavpath,self.time_step,self.min_freq,self.max_freq)
+            print(pitch.rep())
+            print(sorted(pitch._rep.keys()))
+            print(pitch[0.3])
+            print(pitch.is_voiced(0.105))
+            print(pitch[0.105])
+            print(pitch.to_array())
             raise(ValueError)
 
 if __name__ == '__main__':

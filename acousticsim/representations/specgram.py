@@ -16,13 +16,15 @@ def to_powerspec(x, sr, win_len, time_step):
     indices = arange(int(nperseg/2), x.shape[0] - int(nperseg/2) + 1, nperstep)
     num_frames = len(indices)
 
-    pspec = zeros((num_frames,int(nfft/2)+1))
+    #pspec = zeros((num_frames,int(nfft/2)+1))
+    pspec = dict()
     for i in range(num_frames):
         X = x[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
         X = X * window
         fx = fft(X, n = nfft)
         power = abs(fx[:int(nfft/2)+1])**2
-        pspec[i,:] = power
+        #pspec[i,:] = power
+        pspec[indices[i]/sr] = power
     return pspec
 
 def to_specgram(filename,win_len,time_step=None):

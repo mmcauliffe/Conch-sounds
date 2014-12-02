@@ -162,21 +162,20 @@ class Mfcc(Representation):
 
         pspec = to_powerspec(proc,self._sr,self._win_len,self._time_step)
 
-        filterbank = self.filter_bank((pspec.shape[1]-1) * 2)
+        filterbank = self.filter_bank((len(next(iter(pspec.values())))-1) * 2)
 
-
-        num_frames = pspec.shape[0]
-
-        self._rep = zeros((num_frames,self._num_coeffs))
-        aspec =zeros((num_frames,self._num_filters))
-        for k in range(num_frames):
-            filteredSpectrum = dot(sqrt(pspec[k,:]), filterbank)**2
-            aspec[k,:] = filteredSpectrum
+        #self._rep = zeros((num_frames,self._num_coeffs))
+        self._rep = dict()
+        #aspec = zeros((num_frames,self._num_filters))
+        aspec = dict()
+        for k in pspec:
+            filteredSpectrum = dot(sqrt(pspec[k]), filterbank)**2
+            aspec[k] = filteredSpectrum
             dctSpectrum = dct_spectrum(filteredSpectrum)
             dctSpectrum = dot(dctSpectrum , lift)
             if not self._use_power:
                 dctSpectrum = dctSpectrum[1:]
-            self._rep[k,:] = dctSpectrum[:self._num_coeffs]
+            self._rep[k] = dctSpectrum[:self._num_coeffs]
         if debug:
             return pspec,aspec
         #self._rep.transpose()

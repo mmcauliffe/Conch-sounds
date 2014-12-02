@@ -8,7 +8,7 @@ import scipy as sp
 import scipy.signal as sig
 
 from scipy.fftpack import fft,ifft
-from scipy.signal import resample
+from scipy.signal import resample, gaussian
 from numpy import (pad,log,array,zeros, floor,exp,sqrt,dot,arange,
                     hanning,sin, pi,linspace,log10,round,maximum,minimum,
                     sum,cos,spacing,diag,ceil)
@@ -190,35 +190,45 @@ def lpc(signal, order, axis=-1):
     r = acorr_lpc(signal, axis)
     return levinson_1d(r, order)
 
-class LpcFormants(Representation):
+class Formants(Representation):
 
-    def __init__(self, filepath,max_freq, num_formants, win_len, time_step, attributes = None):
+    def __init__(self, filepath,max_freq, num_formants, win_len,
+                    time_step, attributes = None, window_shape = 'gaussian'):
         Representation.__init__(self, filepath, (0,max_freq), attributes = None)
         self._num_formants = num_formants
+
         self._win_len = win_len
+        self._window_shape = window_shape
+        if self._window_shape == 'gaussian':
+            self._win_len *= 2
+
         self._time_step = time_step
+
+
+class LpcFormants(Formants):
+
+    def __init__(self, filepath,max_freq, num_formants, win_len,
+                    time_step, attributes = None, window_shape = 'gaussian'):
+        Formants.__init__(self, filepath,max_freq, num_formants, win_len,
+                    time_step, attributes = None, window_shape = 'gaussian')
         self.process()
 
     def process(self):
-
+        self._rep = dict()
         self._sr, proc = preproc(self._filepath,alpha=0.97)
-        print(self._sr)
-        print(proc.shape)
         new_sr = 2 *self._freq_lims[1]
-        print(new_sr)
-        print(int(ceil(self._sr/new_sr)))
         proc = resample(proc,int(ceil(proc.shape[0]/(self._sr/new_sr))))
-
         nperseg = int(self._win_len*new_sr)
         nperstep = int(self._time_step*new_sr)
-        window = hanning(nperseg+2)[1:nperseg+1]
-        print(proc.shape)
-        print(nperseg)
+
+        if self._window_shape == 'gaussian':
+            window = gaussian(nperseg+2,int(nperseg*0.15))[1:nperseg+2]
+        else:
+            window = hanning(nperseg+2)[1:nperseg+1]
         indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2) + 1, nperstep)
         num_frames = len(indices)
 
         formants = zeros((num_frames,self._num_formants))
-        print(num_frames)
         for i in range(num_frames):
             X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)+1]
             X = X * window
@@ -228,7 +238,21 @@ class LpcFormants(Representation):
             rts = [r for r in rts if np.imag(r) >= 0]
             angz = np.arctan2(np.imag(rts), np.real(rts))
             frqs = sorted(angz * (new_sr / (2 * np.pi)))
-            print(i*self._time_step,frqs)
+
+            #inds = sorted(range(len(rts)),key=lambda x: angz[x]* (new_sr / (2 * np.pi)))
+            #frqs = [angz[x]* (new_sr / (2 * np.pi)) for x in inds]
+
+            #bw = -1/2*(new_sr/(2*np.pi))*np.log(np.abs(rts[inds]))
+            #print(indices[i]/new_sr,frqs)
+            #print(bw)
+            formants = list()
+            for f in frqs:
+                if f < 50:
+                    continue
+                if f > self._freq_lims[1] - 50:
+                    continue
+                formants.append(f)
+            self._rep[indices[i]/new_sr] = formants
             #raise(ValueError)
 
 
