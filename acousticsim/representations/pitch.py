@@ -18,7 +18,7 @@ class Pitch(Representation):
     _octave_cost = 0.01
     _octave_jump_cost = 0.35
     _voice_change_cost = 0.14
-    _num_candidates = 6
+    _num_candidates = 15
     def __init__(self, filepath, time_step, freq_lims, window_shape = 'gaussian', attributes=None):
         Representation.__init__(self,filepath, freq_lims, attributes)
         self._win_len = 3/self._freq_lims[0]
