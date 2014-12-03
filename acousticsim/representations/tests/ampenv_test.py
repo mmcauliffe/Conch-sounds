@@ -42,7 +42,7 @@ class EnvelopeTest(unittest.TestCase):
             #for i in range(self.num_bands):
             #    denom = sqrt(sum(env[:,i]**2))
             #    env[:,i] = env[:,i]/denom
-            assert_array_almost_equal(m['env1'],env._rep)
+            assert_array_almost_equal(m['env1'],env.to_array())
 
 
 if __name__ == '__main__':

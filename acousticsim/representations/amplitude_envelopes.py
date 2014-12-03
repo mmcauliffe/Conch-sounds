@@ -71,7 +71,7 @@ class Envelopes(Representation):
                                     )/self._num_bands)**(x+1)
                                     for x in range(self._num_bands)]
 
-        self._rep = []
+        envs = []
         for i in range(self._num_bands):
             b, a = butter(2,(bandLo[i]/(self._sr/2),bandHi[i]/(self._sr/2)), btype = 'bandpass')
             env = filtfilt(b,a,proc)
@@ -79,8 +79,12 @@ class Envelopes(Representation):
             if mode == 'downsample':
                 env = resample(env,int(ceil(len(env)/int(ceil(self._sr/120)))))
                 #env = decimate(env,int(ceil(self._sr/120)))
-            self._rep.append(env)
-        self._rep = array(self._rep).T
+            envs.append(env)
+        envs = array(envs).T
         if mode == 'downsample':
             self._sr = 120
+        self._rep = dict()
+        for i in range(envs.shape[0]):
+            self._rep[i/self._sr] = envs[i,:]
+        #Don't know if this is the best way to do it
 

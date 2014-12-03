@@ -178,4 +178,3 @@ class Mfcc(Representation):
             self._rep[k] = dctSpectrum[:self._num_coeffs]
         if debug:
             return pspec,aspec
-        #self._rep.transpose()

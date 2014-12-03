@@ -52,7 +52,7 @@ def preproc(path,sr=16000,alpha=0.95):
     else:
         proc = sig
     #proc = proc / 32768
-    if alpha != 0:
+    if alpha != 0 and alpha is not None:
         proc = lfilter([1., -alpha],1,proc)
     return sr,proc
 

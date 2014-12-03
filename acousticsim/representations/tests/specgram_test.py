@@ -10,7 +10,7 @@ except ImportError:
     test_dir = os.path.dirname(os.path.abspath(__file__))
     test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
     sys.path.append(test_path)
-    from acousticsim.representations.specgram import (to_specgram, to_powerspec)
+    from acousticsim.representations.specgram import (Spectrogram)
 
 
 
@@ -37,9 +37,8 @@ class PspecTest(unittest.TestCase):
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             matpath = os.path.join(TEST_DIR,f+'_mfcc.mat')
             m = loadmat(matpath)
-            sr, proc = preproc(wavpath,alpha=0.97)
-            pspec = to_powerspec(proc,sr,self.winLen,self.timeStep)
-            assert_array_almost_equal(m['pspectrum'].T,pspec)
+            spec = Spectrogram(wavpath, None ,self.winLen,self.timeStep)
+            assert_array_almost_equal(m['pspectrum'].T,spec.pspec())
 
 if __name__ == '__main__':
     unittest.main()

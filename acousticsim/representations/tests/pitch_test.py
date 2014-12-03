@@ -4,15 +4,12 @@ from numpy import array,sum,sqrt
 from numpy.linalg import norm
 import unittest
 import os
-try:
-    from acousticsim.representations.pitch import to_pitch_zcd
-except ImportError:
-    import sys
+import sys
 
-    test_dir = os.path.dirname(os.path.abspath(__file__))
-    test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
-    sys.path.append(test_path)
-    from acousticsim.representations.pitch import to_pitch_zcd
+test_dir = os.path.dirname(os.path.abspath(__file__))
+test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
+sys.path.insert(0,test_path)
+from acousticsim.representations.pitch import to_pitch_zcd, Pitch
 
 
 from numpy.testing import assert_array_almost_equal
@@ -36,6 +33,18 @@ class ZCDTest(unittest.TestCase):
         gt, env = to_gammatone(path,self.num_bands,self.freq_lims)
         to_pitch_zcd(gt)
 
+class ACTest(unittest.TestCase):
+    def setUp(self):
+        self.time_step = 0.01
+        self.freq_lims = (75,600)
+
+    def test_ac(self):
+        for f in filenames:
+            wavpath = os.path.join(TEST_DIR,f+'.wav')
+
+            pitch = Pitch(wavpath,self.time_step, self.freq_lims)
+            pitch.process()
+            raise(ValueError)
 
 if __name__ == '__main__':
     unittest.main()

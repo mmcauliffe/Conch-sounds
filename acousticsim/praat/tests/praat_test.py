@@ -33,7 +33,9 @@ class PraatFormantsTest(unittest.TestCase):
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
             formants = to_formants_praat(praatpath,wavpath,self.time_step, self.win_len, self.num_formants,self.max_freq)
-            print(formants.rep())
+            print(formants.to_array())
+            print(formants.to_array('bandwidth'))
+            raise(ValueError)
 
 class PraatPitchTest(unittest.TestCase):
     def setUp(self):

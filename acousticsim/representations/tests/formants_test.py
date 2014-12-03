@@ -35,7 +35,8 @@ class LpcFormantsTest(unittest.TestCase):
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
             formants = LpcFormants(wavpath,self.max_freq, self.num_formants, self.win_len,self.time_step)
-            print(formants.rep())
+            print(formants.to_array())
+            print(formants.to_array('bandwidth'))
             raise(ValueError)
 
 if __name__ == '__main__':

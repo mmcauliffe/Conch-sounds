@@ -1,4 +1,4 @@
-from .specgram import to_specgram
+from .specgram import Spectrogram
 from .mfcc import Mfcc
 from .amplitude_envelopes import Envelopes
 from .gammatone import to_gammatone

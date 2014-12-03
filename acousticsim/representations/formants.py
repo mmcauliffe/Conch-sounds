@@ -204,6 +204,21 @@ class Formants(Representation):
 
         self._time_step = time_step
 
+    def to_array(self, value='formant'):
+        times = sorted(self._rep.keys())
+        ex = next(iter(self._rep.values()))
+        try:
+            frame_len = len(ex)
+        except:
+            frame_len = 1
+
+        output = np.zeros((len(times),frame_len))
+        for i, t in enumerate(times):
+            if value == 'formant':
+                output[i,:] = [x[0] for x in self._rep[t]]
+            elif value == 'bandwidth':
+                output[i,:] = [x[1] for x in self._rep[t]]
+        return output
 
 class LpcFormants(Formants):
 
@@ -215,14 +230,15 @@ class LpcFormants(Formants):
 
     def process(self):
         self._rep = dict()
-        self._sr, proc = preproc(self._filepath,alpha=0.97)
         new_sr = 2 *self._freq_lims[1]
+        alpha = np.exp(-2 * np.pi * 50 * (1/new_sr))
+        self._sr, proc = preproc(self._filepath,alpha=alpha)
         proc = resample(proc,int(ceil(proc.shape[0]/(self._sr/new_sr))))
         nperseg = int(self._win_len*new_sr)
         nperstep = int(self._time_step*new_sr)
 
         if self._window_shape == 'gaussian':
-            window = gaussian(nperseg+2,int(nperseg*0.15))[1:nperseg+2]
+            window = gaussian(nperseg+2,0.45*(nperseg-1)/2)[1:nperseg+2]
         else:
             window = hanning(nperseg+2)[1:nperseg+1]
         indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2) + 1, nperstep)
@@ -235,23 +251,23 @@ class LpcFormants(Formants):
             A, e, k  = lpc(X,self._num_formants*2)
 
             rts = np.roots(A)
-            rts = [r for r in rts if np.imag(r) >= 0]
+            rts = np.array([r for r in rts if np.imag(r) >= 0])
             angz = np.arctan2(np.imag(rts), np.real(rts))
-            frqs = sorted(angz * (new_sr / (2 * np.pi)))
-
-            #inds = sorted(range(len(rts)),key=lambda x: angz[x]* (new_sr / (2 * np.pi)))
-            #frqs = [angz[x]* (new_sr / (2 * np.pi)) for x in inds]
-
-            #bw = -1/2*(new_sr/(2*np.pi))*np.log(np.abs(rts[inds]))
-            #print(indices[i]/new_sr,frqs)
-            #print(bw)
+            frqs = angz * (new_sr / (2 * np.pi))
+            frq_inds = np.argsort(frqs)
+            frqs = frqs[frq_inds]
+            #print(frqs)
+            bw = -1/2*(new_sr/(2*np.pi))*np.log(np.abs(rts[frq_inds]))
             formants = list()
-            for f in frqs:
+            for j,f in enumerate(frqs):
                 if f < 50:
                     continue
                 if f > self._freq_lims[1] - 50:
                     continue
-                formants.append(f)
+                formants.append((f,bw[j]))
+            missing = self._num_formants - len(formants)
+            if missing:
+                formants += [(None,None)] * missing
             self._rep[indices[i]/new_sr] = formants
             #raise(ValueError)
 
