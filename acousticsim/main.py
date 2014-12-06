@@ -1,5 +1,5 @@
 import os
-from multiprocessing import Process, Manager, Queue
+from multiprocessing import Process, Manager, Queue, cpu_count, Value, Lock
 import time
 from queue import Empty
 from collections import OrderedDict
@@ -127,7 +127,11 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
     call_back = kwargs.get('call_back',None)
     to_rep = _build_to_rep(**kwargs)
 
-    num_cores = kwargs.get('num_cores', 1)
+    if kwargs.get('use_multi',False):
+        num_cores = int((3*cpu_count())/4)
+        print(num_cores)
+    else:
+        num_cores = kwargs.get('num_cores', 1)
     output_sim = kwargs.get('output_sim',False)
 
     match_function = kwargs.get('match_function', 'dtw')
@@ -138,12 +142,15 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
         dist_func = dct_distance
     else:
         dist_func = dtw_distance
-    cache = dict()
-    output_values = list()
+
+    attributes = kwargs.get('attributes',dict())
+    asim = list()
     if call_back is not None:
         call_back('Calculating acoustic similarity...')
         call_back(0,len(path_mapping))
         cur = 0
+    if cache is None:
+        cache = dict()
     for i,pm in enumerate(path_mapping):
         if stop_check is not None and stop_check():
             return
@@ -164,12 +171,20 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
             continue
         dist_val = dist_func(cache[pm[0]],cache[pm[1]])
         if output_sim:
-            dist_val = 1/dist_val
-        output_values.append([pm[0],pm[1],dist_val])
+            try:
+                dist_val = 1/dist_val
+            except ZeroDivisionError:
+                dist_val = 1
+        asim.append([pm[0],pm[1],dist_val])
+    #if cache is None:
+        #cache = generate_cache(path_mapping, to_rep, attributes, num_cores, call_back, stop_check)
 
-    return output_values
+    #asim = calc_asim(path_mapping,cache,dist_func, output_sim,num_cores, call_back, stop_check)
 
+    if kwargs.get('return_rep',False):
+        return asim, cache
 
+    return asim
 
 def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
     """Computes acoustic similarity across two directories of .wav files.
@@ -396,8 +411,24 @@ def load_attributes(path):
             outdict[name] = linedict
     return outdict
 
-def rep_worker(job_q,return_dict,rep_func,attributes):
+class Counter(object):
+    def __init__(self, initval=0):
+        self.val = Value('i', initval)
+        self.lock = Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+
+    def value(self):
+        with self.lock:
+            return self.val.value
+
+def rep_worker(job_q,return_dict, counter,rep_func,attributes, stop_check):
     while True:
+        if stop_check is not None and stop_check():
+            break
+        counter.increment()
         try:
             filename = job_q.get(timeout=1)
         except Empty:
@@ -414,24 +445,52 @@ def rep_worker(job_q,return_dict,rep_func,attributes):
         rep._true_label = true_label
         return_dict[os.path.split(filename)[1]] = rep
 
-def generate_cache(path_mapping,rep_func,num_procs, attributes):
+def call_back_worker(call_back, counter, max_value, stop_check):
+    call_back(0, max_value)
+    while True:
+        if stop_check is not None and stop_check():
+            break
+        time.sleep(0.01)
+        value = counter.value()
+        if value > max_value - 5:
+            break
+        call_back(value)
+
+def file_queue_adder(files,queue):
+    for f in files:
+        if not f.lower().endswith('.wav'):
+            continue
+        queue.put(f,timeout=30)
+
+def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
     all_files = set()
     for pm in path_mapping:
+        if stop_check is not None and stop_check():
+            return
         all_files.update(pm)
 
     job_queue = Queue()
 
-    for f in all_files:
-        job_queue.put(f)
+    job_p = Process(target=file_queue_adder,
+                    args = (all_files,job_queue))
+    job_p.start()
+    time.sleep(2)
 
     manager = Manager()
     return_dict = manager.dict()
     procs = []
+
+    counter = Counter()
+    if call_back is not None:
+        call_back('Generating representations...')
+        cb = Process(target = call_back_worker,
+                    args = (call_back, counter, len(all_files), stop_check))
+        procs.append(cb)
     for i in range(num_procs):
         p = Process(
                 target=rep_worker,
                 args=(job_queue,
-                      return_dict,rep_func,attributes))
+                      return_dict, counter,rep_func,attributes, stop_check))
         procs.append(p)
         p.start()
     time.sleep(10)
@@ -440,30 +499,41 @@ def generate_cache(path_mapping,rep_func,num_procs, attributes):
 
     return return_dict
 
-def dist_worker(job_q,return_dict,dist_func,axb,cache):
+def dist_worker(job_q,return_dict,counter,dist_func, output_sim,axb,cache, stop_check):
     while True:
+        if stop_check is not None and stop_check():
+            break
+        counter.increment()
         try:
             pm = job_q.get(timeout=1)
         except Empty:
             break
         filetup = tuple(map(lambda x: os.path.split(x)[1],pm))
-        base = cache[filetup[0]]
-        model = cache[filetup[1]]
+        try:
+            base = cache[filetup[0]]
+            model = cache[filetup[1]]
+            if axb:
+                shadow = cache[filetup[2]]
+        except KeyError:
+            continue
         dist1 = dist_func(base,model)
         if axb:
-            shadow = cache[filetup[2]]
             dist2 = dist_func(shadow,model)
             ratio = dist2 / dist1
         else:
             ratio = dist1
-
+        if output_sim:
+            try:
+                ratio = 1/ratio
+            except ZeroDivisionError:
+                ratio = 1
         return_dict[filetup] = ratio
 
 def queue_adder(path_mapping,queue):
     for pm in path_mapping:
         queue.put(pm,timeout=30)
 
-def calc_asim(path_mapping, cache,dist_func,num_procs):
+def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, stop_check):
     if len(path_mapping[0]) == 3:
         axb = True
     else:
@@ -478,11 +548,18 @@ def calc_asim(path_mapping, cache,dist_func,num_procs):
     manager = Manager()
     return_dict = manager.dict()
     procs = []
+
+    counter = Counter()
+    if call_back is not None:
+        call_back('Calculating acoustic similarity...')
+        cb = Process(target = call_back_worker,
+                    args = (call_back, counter, len(path_mapping), stop_check))
+        procs.append(cb)
     for i in range(num_procs):
         p = Process(
                 target=dist_worker,
                 args=(job_queue,
-                      return_dict,dist_func,axb,cache))
+                      return_dict, counter,dist_func, output_sim,axb,cache, stop_check))
         procs.append(p)
         p.start()
     time.sleep(2)
