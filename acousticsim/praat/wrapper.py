@@ -5,6 +5,7 @@ import re
 
 from acousticsim.representations.formants import Formants
 from acousticsim.representations.pitch import Pitch
+from acousticsim.representations.intensity import Intensity
 
 def to_pitch_praat(praatpath, filename, time_step, min_pitch, max_pitch):
     script = 'pitch.praat'
@@ -35,8 +36,16 @@ def to_formants_praat(praatpath, filename, time_step,
     output.set_rep(r)
     return output
 
-def to_intensity_praat(praatpath,*args):
-    pass
+def to_intensity_praat(praatpath, filename, time_step):
+    script = 'intensity.praat'
+    listing = run_script(praatpath, script, filename, time_step)
+    output = Intensity(filename, time_step)
+    r = read_praat_out(listing)
+    for k,v in r.items():
+        print(k,v['Intensity'])
+        r[k] = v['Intensity']
+    output.set_rep(r)
+    return output
 
 
 

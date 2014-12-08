@@ -49,13 +49,26 @@ class PraatPitchTest(unittest.TestCase):
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
             pitch = to_pitch_praat(praatpath,wavpath,self.time_step,self.min_freq,self.max_freq)
-            print(pitch.rep())
-            print(sorted(pitch._rep.keys()))
-            print(pitch[0.3])
-            print(pitch.is_voiced(0.105))
-            print(pitch[0.105])
-            print(pitch.to_array())
-            raise(ValueError)
+            #print(pitch.rep())
+            #print(sorted(pitch._rep.keys()))
+            #print(pitch[0.3])
+            #print(pitch.is_voiced(0.105))
+            #print(pitch[0.105])
+            #print(pitch.to_array())
+            #raise(ValueError)
+
+class PraatIntensityTest(unittest.TestCase):
+    def setUp(self):
+        self.time_step = 0.01
+
+    def test_intensity(self):
+
+        for f in filenames:
+            print(f)
+            wavpath = os.path.join(TEST_DIR,f+'.wav')
+            intensity = to_intensity_praat(praatpath,wavpath,self.time_step)
+            print(intensity.to_array())
+
 
 if __name__ == '__main__':
     unittest.main()

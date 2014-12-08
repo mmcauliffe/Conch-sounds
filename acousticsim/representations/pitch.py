@@ -28,10 +28,9 @@ class Pitch(Representation):
         self._time_step = time_step
 
     def process(self):
-        import matplotlib.pyplot as plt
         self._sr, proc = preproc(self._filepath,alpha=None)
         maxproc = max(proc)
-        print(maxproc)
+        #print(maxproc)
         nperseg = int(self._win_len*self._sr)
         nperstep = int(self._time_step*self._sr)
         if self._window_shape == 'gaussian':
@@ -41,7 +40,7 @@ class Pitch(Representation):
 
         maxpos = int(1/self._freq_lims[0]*self._sr)
         minpos = int(1/self._freq_lims[1]*self._sr)
-        print(minpos,maxpos)
+        #print(minpos,maxpos)
         indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2) + 1, nperstep)
         num_frames = len(indices)
         self._rep = dict()
@@ -54,7 +53,7 @@ class Pitch(Representation):
             X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)+1]
             X = X * window
             X -= mean(X)
-            print(max(X)/maxproc)
+            #print(max(X)/maxproc)
             unvoicedR = self._voice_thresh + maximum(0,
                         2 - (max(X)/maxproc)/
                         (self._sil_thresh/(1+self._voice_thresh)))
@@ -70,15 +69,12 @@ class Pitch(Representation):
             #plt.plot(orig_ac[minpos:maxpos])
             #plt.show()
             cands = minpos + argrelmax(orig_ac[minpos:maxpos])[0][:self._num_candidates-1]
-            print(cands)
+            #print(cands)
             for pos in cands:
                 f0 = 1/(pos/self._sr)
                 R = orig_ac[pos] - self._octave_cost * log(self._freq_lims[0] * pos)
                 candidates.append((f0,R))
             candidate_matrix.append(candidates)
-        #print(candidate_matrix)
-        for t in range(num_frames):
-            print(candidate_matrix[t])
         def transition_cost(f1, f2):
             if f1 == 0 and f2 == 0:
                 return 0
@@ -102,14 +98,11 @@ class Pitch(Representation):
         for t in range(1, num_frames):
             V.append({})
             newpath = {}
-            print(t)
-            print(candidate_matrix[t])
             for y in range(self._num_candidates):
                 best = inf
                 state = -1
                 try:
                     freq, r = candidate_matrix[t][y]
-                    print(y,freq,r)
                 except IndexError:
                     continue
                 for y0 in range(self._num_candidates):
@@ -118,21 +111,13 @@ class Pitch(Representation):
                         cost += transition_cost(candidate_matrix[t-1][y0][0],
                                                 freq)
                         cost -= r
-                        #if t == 7:
-                        #    print(V[t-1][y0])
-                        #    print(transition_cost(candidate_matrix[t-1][y0][0],
-                        #                        freq))
-                        #    print(r)
                     except (IndexError,KeyError):
                         continue
 
                     if cost < best:
                         best = cost
                         state = y0
-                    #if t == 8:
-                    #    print(y0,cost,best,state)
                 V[t][y] = best
-                print(y,state)
                 newpath[y] = path[state] + [y]
 
             # Don't need to remember the old paths
@@ -160,17 +145,12 @@ class Pitch(Representation):
                     except KeyError:
                         s += " " * 7
                     s += " "
-                #s += " ".join("%.7s" % ("%f" % v[y]) for v in V)
                 s += "\n"
-            print(s)
-
-        print(path[state])
-        print(best)
         for i,p in enumerate(path[state]):
-            print(candidate_matrix[i][p])
-            #self._rep[indices[i]/self._sr] = f0
-        print_dptable(V)
-        raise(ValueError)
+            #print(candidate_matrix[i][p])
+            self._rep[indices[i]/self._sr] = candidate_matrix[i][p][0]
+        #print_dptable(V)
+        #raise(ValueError)
 
     def is_voiced(self, time):
         if self[time] is None:
