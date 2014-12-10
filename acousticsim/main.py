@@ -1,7 +1,7 @@
 import os
 from multiprocessing import Process, Manager, Queue, cpu_count, Value, Lock
 import time
-from queue import Empty
+from queue import Empty, Full
 from collections import OrderedDict
 
 from numpy import zeros
@@ -144,43 +144,42 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
         dist_func = dtw_distance
 
     attributes = kwargs.get('attributes',dict())
-    asim = list()
-    if call_back is not None:
-        call_back('Calculating acoustic similarity...')
-        call_back(0,len(path_mapping))
-        cur = 0
-    if cache is None:
-        cache = dict()
-    for i,pm in enumerate(path_mapping):
-        if stop_check is not None and stop_check():
-            return
-        if call_back is not None:
-            cur += 1
-            if cur % 20 == 0:
-                call_back(cur)
-        allgood = False
-
-        for filepath in pm:
-            if not filepath.lower().endswith('.wav'):
-                break
-            if filepath not in cache:
-                cache[filepath] = to_rep(filepath)
-        else:
-            allgood = True
-        if not allgood:
-            continue
-        dist_val = dist_func(cache[pm[0]],cache[pm[1]])
-        if output_sim:
-            try:
-                dist_val = 1/dist_val
-            except ZeroDivisionError:
-                dist_val = 1
-        asim.append([pm[0],pm[1],dist_val])
+    #asim = dict()
+    #if call_back is not None:
+        #call_back('Calculating acoustic similarity...')
+        #call_back(0,len(path_mapping))
+        #cur = 0
     #if cache is None:
-        #cache = generate_cache(path_mapping, to_rep, attributes, num_cores, call_back, stop_check)
+        #cache = dict()
+    #for i,pm in enumerate(path_mapping):
+        #if stop_check is not None and stop_check():
+            #return
+        #if call_back is not None:
+            #cur += 1
+            #if cur % 20 == 0:
+                #call_back(cur)
+        #allgood = False
 
-    #asim = calc_asim(path_mapping,cache,dist_func, output_sim,num_cores, call_back, stop_check)
+        #for filepath in pm:
+            #if not filepath.lower().endswith('.wav'):
+                #break
+            #if filepath not in cache:
+                #cache[filepath] = to_rep(filepath)
+        #else:
+            #allgood = True
+        #if not allgood:
+            #continue
+        #dist_val = dist_func(cache[pm[0]],cache[pm[1]])
+        #if output_sim:
+            #try:
+                #dist_val = 1/dist_val
+            #except ZeroDivisionError:
+                #dist_val = 1
+        #asim[pm]=dist_val
+    if cache is None:
+        cache = generate_cache(path_mapping, to_rep, attributes, num_cores, call_back, stop_check)
 
+    asim = calc_asim(path_mapping,cache,dist_func, output_sim,num_cores, call_back, stop_check)
     if kwargs.get('return_rep',False):
         return asim, cache
 
@@ -266,7 +265,7 @@ def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
     output = acoustic_similarity_mapping(path_mapping, **kwargs)
     if stop_check is not None and stop_check():
         return
-    output_val = sum([x[-1] for x in output]) / len(output)
+    output_val = sum(output.values()) / len(output)
 
     if kwargs.get('return_all', False):
         output_val = output,output_val
@@ -424,9 +423,22 @@ class Counter(object):
         with self.lock:
             return self.val.value
 
-def rep_worker(job_q,return_dict, counter,rep_func,attributes, stop_check):
+class Stopped(object):
+    def __init__(self, initval=False):
+        self.val = Value('i', initval)
+        self.lock = Lock()
+
+    def stop(self):
+        with self.lock:
+            self.val.value = True
+
+    def stop_check(self):
+        with self.lock:
+            return self.val.value
+
+def rep_worker(job_q,return_dict, counter,rep_func,attributes, stopped):
     while True:
-        if stop_check is not None and stop_check():
+        if stopped.stop_check():
             break
         counter.increment()
         try:
@@ -456,11 +468,19 @@ def call_back_worker(call_back, counter, max_value, stop_check):
             break
         call_back(value)
 
-def file_queue_adder(files,queue):
-    for f in files:
+def file_queue_adder(files,queue, stopped):
+    while len(files) > 0:
+        f = files.pop(0)
         if not f.lower().endswith('.wav'):
             continue
-        queue.put(f,timeout=30)
+        while True:
+            if stopped.stop_check():
+                break
+            try:
+                queue.put(f,False)
+                break
+            except Full:
+                pass
 
 def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
     all_files = set()
@@ -470,9 +490,10 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
         all_files.update(pm)
 
     job_queue = Queue()
+    stopped = Stopped()
 
     job_p = Process(target=file_queue_adder,
-                    args = (all_files,job_queue))
+                    args = (list(all_files),job_queue, stopped))
     job_p.start()
     time.sleep(2)
 
@@ -481,27 +502,41 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
     procs = []
 
     counter = Counter()
-    if call_back is not None:
-        call_back('Generating representations...')
-        cb = Process(target = call_back_worker,
-                    args = (call_back, counter, len(all_files), stop_check))
-        procs.append(cb)
+    #if call_back is not None:
+    #    call_back('Generating representations...')
+    #    cb = Process(target = call_back_worker,
+    #                args = (call_back, counter, len(all_files), stop_check))
+    #    procs.append(cb)
     for i in range(num_procs):
         p = Process(
                 target=rep_worker,
                 args=(job_queue,
-                      return_dict, counter,rep_func,attributes, stop_check))
+                      return_dict, counter,rep_func,attributes, stopped))
         procs.append(p)
         p.start()
-    time.sleep(10)
+    time.sleep(2)
+    if call_back is not None:
+        call_back('Generating representations...')
+        prev = 0
+    val = 0
+    while val < len(all_files) - 5:
+        if stop_check is not None and stop_check():
+            stopped.stop()
+            break
+        time.sleep(5)
+        val = counter.value()
+        if call_back is not None:
+            if prev != val:
+                call_back(val)
+                prev = int(val)
     for p in procs:
         p.join()
 
     return return_dict
 
-def dist_worker(job_q,return_dict,counter,dist_func, output_sim,axb,cache, stop_check):
+def dist_worker(job_q,return_dict,counter,dist_func, output_sim,axb,cache, stopped):
     while True:
-        if stop_check is not None and stop_check():
+        if stopped.stop_check():
             break
         counter.increment()
         try:
@@ -529,9 +564,19 @@ def dist_worker(job_q,return_dict,counter,dist_func, output_sim,axb,cache, stop_
                 ratio = 1
         return_dict[filetup] = ratio
 
-def queue_adder(path_mapping,queue):
-    for pm in path_mapping:
-        queue.put(pm,timeout=30)
+def queue_adder(path_mapping,queue,stopped):
+    while len(path_mapping) > 0:
+        if stopped.stop_check():
+            break
+        pm = path_mapping.pop(0)
+        while True:
+            if stopped.stop_check():
+                break
+            try:
+                queue.put(pm,False)
+                break
+            except Full:
+                pass
 
 def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, stop_check):
     if len(path_mapping[0]) == 3:
@@ -540,9 +585,10 @@ def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, st
         axb = False
 
     job_queue = Queue()
+    stopped = Stopped()
 
     job_p = Process(target=queue_adder,
-                    args = (path_mapping,job_queue))
+                    args = (path_mapping,job_queue, stopped))
     job_p.start()
     time.sleep(2)
     manager = Manager()
@@ -550,22 +596,34 @@ def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, st
     procs = []
 
     counter = Counter()
-    if call_back is not None:
-        call_back('Calculating acoustic similarity...')
-        cb = Process(target = call_back_worker,
-                    args = (call_back, counter, len(path_mapping), stop_check))
-        procs.append(cb)
+    #if call_back is not None:
+    #    call_back('Calculating acoustic similarity...')
+    #    cb = Process(target = call_back_worker,
+    #                args = (call_back, counter, len(path_mapping), stop_check))
+    #    procs.append(cb)
     for i in range(num_procs):
         p = Process(
                 target=dist_worker,
                 args=(job_queue,
-                      return_dict, counter,dist_func, output_sim,axb,cache, stop_check))
+                      return_dict, counter,dist_func, output_sim,axb,cache, stopped))
         procs.append(p)
         p.start()
     time.sleep(2)
+    if call_back is not None:
+        call_back('Calculating acoustic similarity...')
+        prev = 0
+    val = 0
+    while val < len(path_mapping) - 5:
+        if stop_check is not None and stop_check():
+            stopped.stop()
+            break
+        val = counter.value()
+        if call_back is not None:
+            if prev != val:
+                call_back(val)
+                prev = int(val)
     job_p.join()
     for p in procs:
         p.join()
-
     return return_dict
 
