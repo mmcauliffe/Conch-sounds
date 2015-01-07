@@ -108,7 +108,7 @@ nz_dataset = DataSet(r'C:\Users\michael\Documents\Data\NZDiph',
                         productions = nz_productions)
 
 bestConfig = None
-representations = ['envelopes','mfcc']
+representations = ['mfcc']
 match_algorithm = ['xcorr','dtw','dct']
 
 use_ati = True

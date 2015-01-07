@@ -1,14 +1,14 @@
 import os
-from multiprocessing import Process, Manager, Queue
+from multiprocessing import Process, Manager, Queue, cpu_count, Value, Lock
 import time
-from queue import Empty
+from queue import Empty, Full
 from collections import OrderedDict
 
 from numpy import zeros
 
 from functools import partial
 
-from acousticsim.representations import to_envelopes, to_mfcc, to_mhec, to_segments
+from acousticsim.representations import Envelopes, Mfcc
 
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
@@ -41,28 +41,23 @@ def _build_to_rep(**kwargs):
 
 
     if rep == 'envelopes':
-        if use_window:
-            to_rep = partial(to_envelopes,
-                                        num_bands=num_filters,
-                                        freq_lims=freq_lims,
-                                        window_length=win_len,
-                                        time_step=time_step)
-        else:
-            to_rep = partial(to_envelopes,num_bands=num_filters,freq_lims=freq_lims)
+        to_rep = partial(Envelopes,
+                                num_bands=num_filters,
+                                freq_lims=freq_lims)
     elif rep == 'mfcc':
-        to_rep = partial(to_mfcc,freq_lims=freq_lims,
+        to_rep = partial(Mfcc,freq_lims=freq_lims,
                                     num_coeffs=num_coeffs,
                                     num_filters = num_filters,
                                     win_len=win_len,
                                     time_step=time_step,
                                     use_power = use_power)
-    elif rep == 'mhec':
-        to_rep = partial(to_mhec, freq_lims=freq_lims,
-                                    num_coeffs=num_coeffs,
-                                    num_filters = num_filters,
-                                    window_length=win_len,
-                                    time_step=time_step,
-                                    use_power = use_power)
+    #elif rep == 'mhec':
+    #    to_rep = partial(to_mhec, freq_lims=freq_lims,
+    #                                num_coeffs=num_coeffs,
+    #                                num_filters = num_filters,
+    #                                window_length=win_len,
+    #                                time_step=time_step,
+    #                                use_power = use_power)
     #elif rep == 'gammatone':
         #if use_window:
             #to_rep = partial(to_gammatone_envelopes,num_bands = num_filters,
@@ -128,11 +123,18 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
 
     """
 
+    stop_check = kwargs.get('stop_check',None)
+    call_back = kwargs.get('call_back',None)
     to_rep = _build_to_rep(**kwargs)
 
-    num_cores = kwargs.get('num_cores', 1)
+    if kwargs.get('use_multi',False):
+        num_cores = int((3*cpu_count())/4)
+        print(num_cores)
+    else:
+        num_cores = kwargs.get('num_cores', 1)
+    output_sim = kwargs.get('output_sim',False)
 
-    match_function = kwargs.get('dist_func', 'dtw')
+    match_function = kwargs.get('match_function', 'dtw')
     cache = kwargs.get('cache',None)
     if match_function == 'xcorr':
         dist_func = xcorr_distance
@@ -140,16 +142,48 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
         dist_func = dct_distance
     else:
         dist_func = dtw_distance
-    if cache is None:
-        cache = generate_cache(path_mapping, to_rep, num_cores)
-    asim = calc_asim(path_mapping,cache,dist_func,num_cores)
 
+    attributes = kwargs.get('attributes',dict())
+    #asim = dict()
+    #if call_back is not None:
+        #call_back('Calculating acoustic similarity...')
+        #call_back(0,len(path_mapping))
+        #cur = 0
+    #if cache is None:
+        #cache = dict()
+    #for i,pm in enumerate(path_mapping):
+        #if stop_check is not None and stop_check():
+            #return
+        #if call_back is not None:
+            #cur += 1
+            #if cur % 20 == 0:
+                #call_back(cur)
+        #allgood = False
+
+        #for filepath in pm:
+            #if not filepath.lower().endswith('.wav'):
+                #break
+            #if filepath not in cache:
+                #cache[filepath] = to_rep(filepath)
+        #else:
+            #allgood = True
+        #if not allgood:
+            #continue
+        #dist_val = dist_func(cache[pm[0]],cache[pm[1]])
+        #if output_sim:
+            #try:
+                #dist_val = 1/dist_val
+            #except ZeroDivisionError:
+                #dist_val = 1
+        #asim[pm]=dist_val
+    if cache is None:
+        cache = generate_cache(path_mapping, to_rep, attributes, num_cores, call_back, stop_check)
+
+    asim = calc_asim(path_mapping,cache,dist_func, output_sim,num_cores, call_back, stop_check)
     if kwargs.get('return_rep',False):
         return asim, cache
 
     return asim
-
-
 
 def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
     """Computes acoustic similarity across two directories of .wav files.
@@ -201,62 +235,135 @@ def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
 
     """
 
+    stop_check = kwargs.get('stop_check',None)
+    call_back = kwargs.get('call_back',None)
+
     files_one = os.listdir(directory_one)
     files_two = os.listdir(directory_two)
+    if call_back is not None:
+        call_back('Mapping directories...')
+        call_back(0,len(files_one)*len(files_two))
+        cur = 0
 
-    path_mapping = [ (os.path.join(directory_one,x),
-                        os.path.join(directory_two,y))
-                        for x in files_one
-                        for y in files_two]
+    path_mapping = list()
+    for x in files_one:
+        for y in files_two:
+            if stop_check is not None and stop_check():
+                return
+            if call_back is not None:
+                cur += 1
+                if cur % 20 == 0:
+                    call_back(cur)
+            if not x.lower().endswith('.wav'):
+                continue
+            if not y.lower().endswith('.wav'):
+                continue
+            path_mapping.append((os.path.join(directory_one,x),
+                        os.path.join(directory_two,y)))
+
+
     output = acoustic_similarity_mapping(path_mapping, **kwargs)
-    output_val = sum([x[1] for x in output]) / len(output)
+    if stop_check is not None and stop_check():
+        return
+    output_val = sum(output.values()) / len(output)
 
-    threaded_q = kwargs.get('threaded_q', None)
-    if not threaded_q:
-        return output_val
-    else:
-        threaded_q.put(output_val)
-        return None
+    if kwargs.get('return_all', False):
+        output_val = output,output_val
+
+    return output_val
+
+def analyze_directories(directories, **kwargs):
+    stop_check = kwargs.get('stop_check',None)
+    call_back = kwargs.get('call_back',None)
+
+    files = []
+    kwargs['attributes'] = dict()
+
+    if call_back is not None:
+        call_back('Mapping directories...')
+        call_back(0,len(directories))
+        cur = 0
+    for d in directories:
+        if not os.path.isdir(d):
+            continue
+        if stop_check is not None and stop_check():
+            return
+        if call_back is not None:
+            cur += 1
+            if cur % 3 == 0:
+                call_back(cur)
+
+        files += [os.path.join(d,x) for x in os.listdir(d) if x.lower().endswith('.wav')]
+
+        att_path = os.path.join(d,'attributes.txt')
+        if os.path.exists(att_path):
+            kwargs['attributes'].update(load_attributes(att_path))
+
+
+    if call_back is not None:
+        call_back('Mapping directories...')
+        call_back(0,len(files)*len(files))
+        cur = 0
+    path_mapping = list()
+    for x in files:
+        for y in files:
+            if stop_check is not None and stop_check():
+                return
+            if call_back is not None:
+                cur += 1
+                if cur % 20 == 0:
+                    call_back(cur)
+            if not x.lower().endswith('.wav'):
+                continue
+            if not y.lower().endswith('.wav'):
+                continue
+            if x == y:
+                continue
+            path_mapping.append((x,y))
+
+    result = acoustic_similarity_mapping(path_mapping, **kwargs)
+    return result
 
 def analyze_directory(directory, **kwargs):
+    stop_check = kwargs.get('stop_check',None)
+    call_back = kwargs.get('call_back',None)
 
-    if not os.path.isdir(directory):
-        raise(ValueError('%s is not a directory.' % directory))
-
-    files = [x for x in os.listdir(directory) if x.lower().endswith('.wav')]
-
-
-
-    path_mapping = [ (os.path.join(directory,x),
-                        os.path.join(directory,y))
-                        for x in files
-                        for y in files if x != y]
-    cache = kwargs.get('cache', None)
-    if cache is not None:
-        kwargs['cache'] = {k: v['representation'] for k,v in cache.items()}
-    result = acoustic_similarity_mapping(path_mapping, **kwargs)
-    if not isinstance(result,tuple):
-        return result
-
+    kwargs['attributes'] = dict()
+    all_files = list()
+    wavs = list()
+    directories = list()
+    for f in os.listdir(directory):
+        path = os.path.join(directory,f)
+        all_files.append(path)
+        if f.lower().endswith('.wav'):
+            wavs.append(path)
+        if os.path.isdir(f):
+            directories.append(f)
+    if not wavs:
+        return analyze_directories(directories, **kwargs)
 
     att_path = os.path.join(directory,'attributes.txt')
-
-
-    scores,reps = result
     if os.path.exists(att_path):
-        attributes = load_attributes(att_path)
-        for k,v in reps.items():
-            if not isinstance(attributes[k],OrderedDict):
-                print(k)
-                print(attributes[k])
-                raise(ValueError)
-            newdict = attributes[k]
-            newdict.update({'representation':reps[k]})
+        kwargs['attributes'].update(load_attributes(att_path))
 
-            reps[k] = newdict
-    else:
-        reps = { k:{'representation':v} for k,v in reps.items()}
-    return scores,reps
+    if call_back is not None:
+        call_back('Mapping files...')
+        call_back(0,len(wavs)*len(wavs))
+        cur = 0
+    path_mapping = list()
+    for x in wavs:
+        for y in wavs:
+            if stop_check is not None and stop_check():
+                return
+            if call_back is not None:
+                cur += 1
+                if cur % 20 == 0:
+                    call_back(cur)
+            if x == y:
+                continue
+            path_mapping.append((x,y))
+    result = acoustic_similarity_mapping(path_mapping, **kwargs)
+    return result
 
 def analyze_single_file(path, output_path,**kwargs):
     from acousticsim.representations.helper import extract_wav
@@ -303,84 +410,220 @@ def load_attributes(path):
             outdict[name] = linedict
     return outdict
 
-def rep_worker(job_q,return_dict,rep_func):
+class Counter(object):
+    def __init__(self, initval=0):
+        self.val = Value('i', initval)
+        self.lock = Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+
+    def value(self):
+        with self.lock:
+            return self.val.value
+
+class Stopped(object):
+    def __init__(self, initval=False):
+        self.val = Value('i', initval)
+        self.lock = Lock()
+
+    def stop(self):
+        with self.lock:
+            self.val.value = True
+
+    def stop_check(self):
+        with self.lock:
+            return self.val.value
+
+def rep_worker(job_q,return_dict, counter,rep_func,attributes, stopped):
     while True:
+        if stopped.stop_check():
+            break
+        counter.increment()
         try:
             filename = job_q.get(timeout=1)
         except Empty:
             break
-        rep = rep_func(filename)
+        path, filelabel = os.path.split(filename)
+        att = OrderedDict()
+        att['filename'] = filelabel
+        try:
+            att.update(attributes[filelabel])
+        except KeyError:
+            pass
+        true_label = os.path.split(path)[1]
+        rep = rep_func(filename,attributes=att)
+        rep._true_label = true_label
         return_dict[os.path.split(filename)[1]] = rep
 
-def generate_cache(path_mapping,rep_func,num_procs):
+def call_back_worker(call_back, counter, max_value, stop_check):
+    call_back(0, max_value)
+    while True:
+        if stop_check is not None and stop_check():
+            break
+        time.sleep(0.01)
+        value = counter.value()
+        if value > max_value - 5:
+            break
+        call_back(value)
+
+def file_queue_adder(files,queue, stopped):
+    while len(files) > 0:
+        f = files.pop(0)
+        if not f.lower().endswith('.wav'):
+            continue
+        while True:
+            if stopped.stop_check():
+                break
+            try:
+                queue.put(f,False)
+                break
+            except Full:
+                pass
+
+def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
     all_files = set()
     for pm in path_mapping:
+        if stop_check is not None and stop_check():
+            return
         all_files.update(pm)
 
     job_queue = Queue()
+    stopped = Stopped()
 
-    for f in all_files:
-        job_queue.put(f)
+    job_p = Process(target=file_queue_adder,
+                    args = (list(all_files),job_queue, stopped))
+    job_p.start()
+    time.sleep(2)
 
     manager = Manager()
     return_dict = manager.dict()
     procs = []
+
+    counter = Counter()
+    #if call_back is not None:
+    #    call_back('Generating representations...')
+    #    cb = Process(target = call_back_worker,
+    #                args = (call_back, counter, len(all_files), stop_check))
+    #    procs.append(cb)
     for i in range(num_procs):
         p = Process(
                 target=rep_worker,
                 args=(job_queue,
-                      return_dict,rep_func))
+                      return_dict, counter,rep_func,attributes, stopped))
         procs.append(p)
         p.start()
-    time.sleep(10)
+    time.sleep(2)
+    if call_back is not None:
+        call_back('Generating representations...')
+        prev = 0
+    val = 0
+    while val < len(all_files) - 5:
+        if stop_check is not None and stop_check():
+            stopped.stop()
+            break
+        time.sleep(5)
+        val = counter.value()
+        if call_back is not None:
+            if prev != val:
+                call_back(val)
+                prev = int(val)
     for p in procs:
         p.join()
 
     return return_dict
 
-def dist_worker(job_q,return_dict,dist_func,axb,cache):
+def dist_worker(job_q,return_dict,counter,dist_func, output_sim,axb,cache, stopped):
     while True:
+        if stopped.stop_check():
+            break
+        counter.increment()
         try:
             pm = job_q.get(timeout=1)
         except Empty:
             break
         filetup = tuple(map(lambda x: os.path.split(x)[1],pm))
-        base = cache[filetup[0]]
-        model = cache[filetup[1]]
+        try:
+            base = cache[filetup[0]]
+            model = cache[filetup[1]]
+            if axb:
+                shadow = cache[filetup[2]]
+        except KeyError:
+            continue
         dist1 = dist_func(base,model)
         if axb:
-            shadow = cache[filetup[2]]
             dist2 = dist_func(shadow,model)
             ratio = dist2 / dist1
         else:
             ratio = dist1
-
+        if output_sim:
+            try:
+                ratio = 1/ratio
+            except ZeroDivisionError:
+                ratio = 1
         return_dict[filetup] = ratio
 
-def calc_asim(path_mapping, cache,dist_func,num_procs):
+def queue_adder(path_mapping,queue,stopped):
+    while len(path_mapping) > 0:
+        if stopped.stop_check():
+            break
+        pm = path_mapping.pop(0)
+        while True:
+            if stopped.stop_check():
+                break
+            try:
+                queue.put(pm,False)
+                break
+            except Full:
+                pass
+
+def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, stop_check):
     if len(path_mapping[0]) == 3:
         axb = True
     else:
         axb = False
 
     job_queue = Queue()
+    stopped = Stopped()
 
-    for pm in path_mapping:
-        job_queue.put(pm)
-
+    job_p = Process(target=queue_adder,
+                    args = (path_mapping,job_queue, stopped))
+    job_p.start()
+    time.sleep(2)
     manager = Manager()
     return_dict = manager.dict()
     procs = []
+
+    counter = Counter()
+    #if call_back is not None:
+    #    call_back('Calculating acoustic similarity...')
+    #    cb = Process(target = call_back_worker,
+    #                args = (call_back, counter, len(path_mapping), stop_check))
+    #    procs.append(cb)
     for i in range(num_procs):
         p = Process(
                 target=dist_worker,
                 args=(job_queue,
-                      return_dict,dist_func,axb,cache))
+                      return_dict, counter,dist_func, output_sim,axb,cache, stopped))
         procs.append(p)
         p.start()
-    time.sleep(10)
+    time.sleep(2)
+    if call_back is not None:
+        call_back('Calculating acoustic similarity...')
+        prev = 0
+    val = 0
+    while val < len(path_mapping) - 5:
+        if stop_check is not None and stop_check():
+            stopped.stop()
+            break
+        val = counter.value()
+        if call_back is not None:
+            if prev != val:
+                call_back(val)
+                prev = int(val)
+    job_p.join()
     for p in procs:
         p.join()
-
     return return_dict
 

@@ -44,6 +44,7 @@ class GammatoneTest(unittest.TestCase):
             #pyplot.show()
             assert_array_almost_equal(m['bm'],bm)
             assert_array_almost_equal(m['env'],env)
+            #raise(ValueError)
 
 
 if __name__ == '__main__':

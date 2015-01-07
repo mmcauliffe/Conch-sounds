@@ -3,55 +3,11 @@ from numpy import (pad,log,array,zeros, floor,exp,sqrt,dot,arange,
                     sum,cos,spacing,diag,ceil)
 from numpy.fft import fft
 
+from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc
 from acousticsim.representations.specgram import to_powerspec
 
 from scipy.fftpack import dct
-from scipy.io import wavfile
-
-
-
-def filter_bank(nfft,nfilt,minFreq,maxFreq,sr):
-    """Construct a mel-frequency filter bank.
-
-    Parameters
-    ----------
-    nfft : int
-        Number of points in the FFT.
-    nfilt : int
-        Number of mel filters.
-    minFreq : int
-        Minimum frequency in Hertz.
-    maxFreq : int
-        Maximum frequency in Hertz.
-    sr : int
-        Sampling rate of the sampled waveform.
-
-    Returns
-    -------
-    array
-        Filter bank to multiply an FFT spectrum to create a mel-frequency
-        spectrum.
-
-    """
-
-    minMel = freqToMel(minFreq)
-    maxMel = freqToMel(maxFreq)
-    melPoints = linspace(minMel,maxMel,nfilt+2)
-    binfreqs = melToFreq(melPoints)
-    bins = round((nfft-1)*binfreqs/sr)
-
-    fftfreqs = arange(int(nfft/2+1))/nfft * sr
-
-    fbank = zeros((nfilt,int(nfft/2 +1)))
-    for i in range(nfilt):
-        fs = binfreqs[i+arange(3)]
-        fs = fs[1] + (fs - fs[1])
-        loslope = (fftfreqs - fs[0])/(fs[1] - fs[0])
-        highslope = (fs[2] - fftfreqs)/(fs[2] - fs[1])
-        fbank[i,:] = maximum(zeros(loslope.shape),minimum(loslope,highslope))
-    #fbank = fbank / max(sum(fbank,axis=1))
-    return fbank.transpose()
 
 def freqToMel(freq):
     """Convert a value in Hertz to a value in mel.
@@ -110,106 +66,115 @@ def dct_spectrum(spec):
     cep =  dot(dctm , (10*log10(spec + spacing(1))))
     return cep
 
-def to_melbank(filename, freq_lims,win_len,time_step,num_filters = 26):
-    sr, proc = preproc(filename,alpha=0.97)
+class Mfcc(Representation):
+    def __init__(self, filepath, freq_lims, num_coeffs, win_len,
+                        time_step, num_filters = 26, use_power = False,
+                        attributes=None):
+        Representation.__init__(self,filepath, freq_lims, attributes)
+        self._num_coeffs = num_coeffs
+        self._win_len = win_len
+        self._time_step = time_step
+        self._num_filters = num_filters
+        self._use_power = use_power
 
-    minHz = freq_lims[0]
-    maxHz = freq_lims[1]
+        self.process()
 
-    nperseg = int(win_len*sr)
-    noverlap = int(time_step*sr)
-    window = hanning(nperseg+2)[1:nperseg+1]
+    def filter_bank(self,nfft):
+        """Construct a mel-frequency filter bank.
 
-    filterbank = filter_bank(nperseg,num_filters,minHz,maxHz,sr)
-    step = nperseg - noverlap
-    indices = arange(0, proc.shape[0]-nperseg+1, step)
-    num_frames = len(indices)
+        Parameters
+        ----------
+        nfft : int
+            Number of points in the FFT.
+        nfilt : int
+            Number of mel filters.
+        minFreq : int
+            Minimum frequency in Hertz.
+        maxFreq : int
+            Maximum frequency in Hertz.
+        sr : int
+            Sampling rate of the sampled waveform.
 
-    melbank = zeros((num_frames,num_filters))
-    for k,ind in enumerate(indices):
-        seg = proc[ind:ind+nperseg] * window
-        complexSpectrum = fft(seg)
-        powerSpectrum = abs(complexSpectrum[:int(nperseg/2)]) ** 2
-        melbank[k,:] = dot(sqrt(powerSpectrum), filterbank)**2
-    return melbank
+        Returns
+        -------
+        array
+            Filter bank to multiply an FFT spectrum to create a mel-frequency
+            spectrum.
 
-def to_powerspec(x, sr, win_len, time_step):
-    nperseg = int(win_len*sr)
-    nperstep = int(time_step*sr)
-    nfft = int(2**(ceil(log(nperseg)/log(2))))
-    window = hanning(nperseg+2)[1:nperseg+1]
+        """
 
-    indices = arange(int(nperseg/2), x.shape[0] - int(nperseg/2) + 1, nperstep)
-    num_frames = len(indices)
+        nfilt = self._num_filters
 
-    pspec = zeros((num_frames,int(nfft/2)+1))
-    for i in range(num_frames):
-        X = x[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
-        X = X * window
-        fx = fft(X, n = nfft)
-        power = abs(fx[:int(nfft/2)+1])**2
-        pspec[i,:] = power
-    return pspec
+        sr = self._sr
 
+        minMel = freqToMel(self._freq_lims[0])
+        maxMel = freqToMel(self._freq_lims[1])
+        melPoints = linspace(minMel,maxMel,nfilt+2)
+        binfreqs = melToFreq(melPoints)
+        bins = round((nfft-1)*binfreqs/sr)
 
-def to_mfcc(filename, freq_lims,num_coeffs,win_len,time_step,num_filters = 26, use_power = False,debug=False):
-    """Generate MFCCs in the style of HTK from a full path to a .wav file.
+        fftfreqs = arange(int(nfft/2+1))/nfft * sr
 
-    Parameters
-    ----------
-    filename : str
-        Full path to .wav file to process.
-    freq_lims : tuple
-        Minimum and maximum frequencies in Hertz to use.
-    num_coeffs : int
-        Number of coefficients of the cepstrum to return.
-    win_len : float
-        Window length in seconds to use for FFT.
-    time_step : float
-        Time step in seconds for windowing.
-    num_filters : int
-        Number of mel filters to use in the filter bank, defaults to 26.
-    use_power : bool
-        If true, use the first coefficient of the cepstrum, which is power
-        based.  Defaults to false.
+        fbank = zeros((nfilt,int(nfft/2 +1)))
+        for i in range(nfilt):
+            fs = binfreqs[i+arange(3)]
+            fs = fs[1] + (fs - fs[1])
+            loslope = (fftfreqs - fs[0])/(fs[1] - fs[0])
+            highslope = (fs[2] - fftfreqs)/(fs[2] - fs[1])
+            fbank[i,:] = maximum(zeros(loslope.shape),minimum(loslope,highslope))
+        #fbank = fbank / max(sum(fbank,axis=1))
+        return fbank.transpose()
 
-    Returns
-    -------
-    2D array
-        MFCCs for each frame.  The first dimension is the time in frames,
-        the second dimension is the MFCC values.
+    def process(self,debug = True):
+        """Generate MFCCs in the style of HTK from a full path to a .wav file.
 
-    """
-    sr, proc = preproc(filename,alpha=0.97)
+        Parameters
+        ----------
+        filename : str
+            Full path to .wav file to process.
+        freq_lims : tuple
+            Minimum and maximum frequencies in Hertz to use.
+        num_coeffs : int
+            Number of coefficients of the cepstrum to return.
+        win_len : float
+            Window length in seconds to use for FFT.
+        time_step : float
+            Time step in seconds for windowing.
+        num_filters : int
+            Number of mel filters to use in the filter bank, defaults to 26.
+        use_power : bool
+            If true, use the first coefficient of the cepstrum, which is power
+            based.  Defaults to false.
 
-    minHz = freq_lims[0]
-    maxHz = freq_lims[1]
+        Returns
+        -------
+        2D array
+            MFCCs for each frame.  The first dimension is the time in frames,
+            the second dimension is the MFCC values.
 
-    L = 22
-    n = arange(num_filters)
-    lift = 1+ (L/2)*sin(pi*n/L)
-    lift = diag(lift)
+        """
+        self._sr, proc = preproc(self._filepath,alpha=0.97)
 
-    pspec = to_powerspec(proc,sr,win_len,time_step)
+        L = 22
+        n = arange(self._num_filters)
+        lift = 1+ (L/2)*sin(pi*n/L)
+        lift = diag(lift)
 
-    filterbank = filter_bank((pspec.shape[1]-1) * 2,num_filters,minHz,maxHz,sr)
+        pspec = to_powerspec(proc,self._sr,self._win_len,self._time_step)
 
+        filterbank = self.filter_bank((len(next(iter(pspec.values())))-1) * 2)
 
-    num_frames = pspec.shape[0]
-
-    mfccs = zeros((num_frames,num_coeffs))
-    aspec =zeros((num_frames,num_filters))
-    for k in range(num_frames):
-        filteredSpectrum = dot(sqrt(pspec[k,:]), filterbank)**2
-        aspec[k,:] = filteredSpectrum
-        dctSpectrum = dct_spectrum(filteredSpectrum)
-        dctSpectrum = dot(dctSpectrum , lift)
-        if not use_power:
-            dctSpectrum = dctSpectrum[1:]
-        mfccs[k,:] = dctSpectrum[:num_coeffs]
-    if debug:
-        return mfccs,pspec,aspec
-    return mfccs
-
-
-
+        #self._rep = zeros((num_frames,self._num_coeffs))
+        self._rep = dict()
+        #aspec = zeros((num_frames,self._num_filters))
+        aspec = dict()
+        for k in pspec:
+            filteredSpectrum = dot(sqrt(pspec[k]), filterbank)**2
+            aspec[k] = filteredSpectrum
+            dctSpectrum = dct_spectrum(filteredSpectrum)
+            dctSpectrum = dot(dctSpectrum , lift)
+            if not self._use_power:
+                dctSpectrum = dctSpectrum[1:]
+            self._rep[k] = dctSpectrum[:self._num_coeffs]
+        if debug:
+            return pspec,aspec

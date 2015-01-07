@@ -9,7 +9,7 @@ import sys
 test_dir = os.path.dirname(os.path.abspath(__file__))
 test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
 sys.path.insert(0,test_path)
-from acousticsim.representations.pitch import to_pitch_zcd, Pitch
+from acousticsim.representations.intensity import Intensity
 
 
 from numpy.testing import assert_array_almost_equal
@@ -21,30 +21,17 @@ filenames = ['s01_s0101a_big_910','s01_s0101a_care_1188',
             's01_s0101a_come_340','s01_s0101a_dad_497',
             's01_s0101a_good_412','s01_s0101a_hall_99']
 
-class ZCDTest(unittest.TestCase):
-    def setUp(self):
-        self.num_bands = 128
-        self.freq_lims = (80,7800)
-
-    def test_zcd(self):
-        return
-        f = filenames[0]
-        path = os.path.join(TEST_DIR,f+'.wav')
-        gt, env = to_gammatone(path,self.num_bands,self.freq_lims)
-        to_pitch_zcd(gt)
-
-class ACTest(unittest.TestCase):
+class IntensityTest(unittest.TestCase):
     def setUp(self):
         self.time_step = 0.01
-        self.freq_lims = (75,600)
 
     def test_ac(self):
         for f in filenames:
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
-            pitch = Pitch(wavpath,self.time_step, self.freq_lims)
-            pitch.process()
-            print(pitch.to_array())
+            intensity = Intensity(wavpath,self.time_step)
+            intensity.process()
+            print(intensity.to_array())
             #raise(ValueError)
 
 if __name__ == '__main__':
