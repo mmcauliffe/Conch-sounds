@@ -1,21 +1,23 @@
 from numpy import log, sqrt, sum, correlate,argmax
 #from scipy.signal import correlate,correlate2d,fftconvolve
 
-def xcorr_distance(e1,e2):
-    length_diff = e1.shape[0] - e2.shape[0]
+def xcorr_distance(rep_one,rep_two):
+    rep_one = rep_one.to_array()
+    rep_two = rep_two.to_array()
+    length_diff = rep_one.shape[0] - rep_two.shape[0]
     if length_diff > 0:
-        longerEnv = e1
-        shorterEnv = e2
+        longerRep = rep_one
+        shorterRep = rep_two
     else:
-        longerEnv = e2
-        shorterEnv = e1
-    num_bands = longerEnv.shape[1]
-    matchSum = correlate(longerEnv[:,0]/sqrt(sum(longerEnv[:,0]**2)),shorterEnv[:,0]/sqrt(sum(shorterEnv[:,0]**2)),mode='valid')
+        longerRep = rep_two
+        shorterRep = rep_one
+    num_bands = longerRep.shape[1]
+    matchSum = correlate(longerRep[:,0]/sqrt(sum(longerRep[:,0]**2)),shorterRep[:,0]/sqrt(sum(shorterRep[:,0]**2)),mode='valid')
     for i in range(1,num_bands):
-        longerBand = longerEnv[:,i]
+        longerBand = longerRep[:,i]
         denom = sqrt(sum(longerBand**2))
         longerBand = longerBand/denom
-        shorterBand = shorterEnv[:,i]
+        shorterBand = shorterRep[:,i]
         denom = sqrt(sum(shorterBand**2))
         shorterBand = shorterBand/denom
         temp = correlate(longerBand,shorterBand,mode='valid')

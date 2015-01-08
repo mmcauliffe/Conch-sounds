@@ -31,10 +31,7 @@ def _build_to_rep(**kwargs):
             num_filters = 8
         else:
             num_filters = 26
-    if win_len is not None:
-        use_window = True
-    else:
-        use_window = False
+    if win_len is None:
         win_len = 0.025
     if time_step is None:
         time_step = 0.01
@@ -129,7 +126,6 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
 
     if kwargs.get('use_multi',False):
         num_cores = int((3*cpu_count())/4)
-        print(num_cores)
     else:
         num_cores = kwargs.get('num_cores', 1)
     output_sim = kwargs.get('output_sim',False)

@@ -24,8 +24,22 @@ class Representation(object):
             else:
                 return getattr(self,key,None)
         elif self._rep is not None:
-            return self.get_value_at_time(key)
+            if isinstance(key, tuple):
+                return self.get_values_between_times(*key)
+            else:
+                return self.get_value_at_time(key)
         raise(KeyError)
+
+    def get_values_between_times(self, begin, end):
+        output = list()
+        times = sorted(self._rep.keys())
+        for t in times:
+            if t < begin:
+                continue
+            if t > end:
+                break
+            output.append(self._rep[t])
+        return output
 
     def get_value_at_time(self,time):
         if time in self._rep:
@@ -88,3 +102,7 @@ class Representation(object):
     @property
     def shape(self):
         return self._rep.shape
+
+    @property
+    def sampling_rate(self):
+        return self._sr
