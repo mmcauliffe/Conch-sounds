@@ -9,7 +9,7 @@
 
     frames = Get number of frames
 
-    output$ = "time(s)"+tab$+"Intensity(dB)"+newline$
+    output$ = "time"+tab$+"Intensity"+newline$
 
     for f from 1 to frames
         t = Get time from frame number... 'f'

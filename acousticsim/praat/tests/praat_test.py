@@ -31,10 +31,10 @@ class PraatFormantsTest(unittest.TestCase):
 
         for f in filenames:
             wavpath = os.path.join(TEST_DIR,f+'.wav')
-            print(f)
+            #print(f)
             formants = to_formants_praat(praatpath,wavpath,self.time_step, self.win_len, self.num_formants,self.max_freq)
-            print(formants.to_array())
-            print(formants.to_array('bandwidth'))
+            #print(formants.to_array())
+            #print(formants.to_array('bandwidth'))
             raise(ValueError)
 
 class PraatPitchTest(unittest.TestCase):
@@ -48,8 +48,8 @@ class PraatPitchTest(unittest.TestCase):
         for f in filenames:
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
-            pitch = to_pitch_praat(praatpath,wavpath,self.time_step,self.min_freq,self.max_freq)
-            #print(pitch.rep())
+            pitch = to_pitch_praat(praatpath,wavpath,self.time_step,(self.min_freq,self.max_freq))
+           # print(pitch.rep)
             #print(sorted(pitch._rep.keys()))
             #print(pitch[0.3])
             #print(pitch.is_voiced(0.105))
@@ -64,10 +64,10 @@ class PraatIntensityTest(unittest.TestCase):
     def test_intensity(self):
 
         for f in filenames:
-            print(f)
+            #print(f)
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             intensity = to_intensity_praat(praatpath,wavpath,self.time_step)
-            print(intensity.to_array())
+            #print(intensity.to_array())
 
 
 if __name__ == '__main__':

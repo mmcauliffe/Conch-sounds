@@ -40,6 +40,8 @@ class MfccTest(unittest.TestCase):
             #assert_array_almost_equal(m['pspectrum'].T,pspec,decimal=4)
             #assert_array_almost_equal(m['aspectrum'].T,aspec,decimal=4)
             assert_array_almost_equal(m['cepstra'].T,mfcc.to_array())
+            mfcc.segment(0.1)
+            break
 
 if __name__ == '__main__':
     unittest.main()

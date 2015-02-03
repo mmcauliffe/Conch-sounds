@@ -67,11 +67,13 @@ def dct_spectrum(spec):
     return cep
 
 class Mfcc(Representation):
+    _is_windowed = True
     def __init__(self, filepath, freq_lims, num_coeffs, win_len,
                         time_step, num_filters = 26, use_power = False,
                         attributes=None):
         Representation.__init__(self,filepath, freq_lims, attributes)
         self._num_coeffs = num_coeffs
+        self._ranges = [None] * self._num_coeffs
         self._win_len = win_len
         self._time_step = time_step
         self._num_filters = num_filters
@@ -154,6 +156,7 @@ class Mfcc(Representation):
 
         """
         self._sr, proc = preproc(self._filepath,alpha=0.97)
+        self._duration = len(proc) / self._sr
 
         L = 22
         n = arange(self._num_filters)
@@ -178,3 +181,16 @@ class Mfcc(Representation):
             self._rep[k] = dctSpectrum[:self._num_coeffs]
         if debug:
             return pspec,aspec
+
+    def norm_amp(self,new_ranges):
+        #if not self._use_power:
+        #    return
+        for i,r in enumerate(new_ranges):
+            new_min, new_max = r
+            if self._ranges[i] is None:
+                old = [x[i] for x in self._rep.values()]
+                self._ranges[i] = [min(old), max(old)]
+            for k,v in self._rep.items():
+                normed = (v[i] - self._ranges[i][0]) / (self._ranges[i][1] - self._ranges[i][0])
+                self._rep[k][i] = (normed * (new_max - new_min)) + new_min
+            #break

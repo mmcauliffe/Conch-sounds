@@ -6,24 +6,25 @@ import re
 from acousticsim.representations.formants import Formants
 from acousticsim.representations.pitch import Pitch
 from acousticsim.representations.intensity import Intensity
+from acousticsim.representations.base import Representation
 
-def to_pitch_praat(praatpath, filename, time_step, min_pitch, max_pitch):
+def to_pitch_praat(praatpath, filename, time_step = 0.01, freq_lims = (75, 600), attributes = None):
     script = 'pitch.praat'
-    listing = run_script(praatpath, script, filename, time_step, min_pitch, max_pitch)
-    output = Pitch(filename, time_step, (min_pitch,max_pitch))
+    listing = run_script(praatpath, script, filename, time_step, freq_lims[0], freq_lims[1])
+    output = Pitch(filename, time_step, freq_lims, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
         r[k] = v['Pitch']
-    output.set_rep(r)
+    output.rep = r
     return output
 
-def to_formants_praat(praatpath, filename, time_step,
-                    window_length, num_formants, ceiling):
+def to_formants_praat(praatpath, filename, time_step = 0.01,
+                    win_len = 0.025, num_formants = 5, max_freq = 5000, attributes = None):
     script = 'formants.praat'
     listing = run_script(praatpath, script, filename, time_step,
-                    window_length, num_formants, ceiling)
-    output = Formants(filename, ceiling, num_formants, window_length,
-                    time_step)
+                    win_len, num_formants, max_freq)
+    output = Formants(filename, max_freq, num_formants, win_len,
+                    time_step, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
         new_v = list()
@@ -33,20 +34,24 @@ def to_formants_praat(praatpath, filename, time_step,
             except KeyError:
                 new_v.append((None,None))
         r[k] = new_v
-    output.set_rep(r)
+    output.rep = r
     return output
 
-def to_intensity_praat(praatpath, filename, time_step):
+def to_intensity_praat(praatpath, filename, time_step = 0.01, attributes = None):
     script = 'intensity.praat'
     listing = run_script(praatpath, script, filename, time_step)
-    output = Intensity(filename, time_step)
+    output = Intensity(filename, time_step, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
         print(k,v['Intensity'])
         r[k] = v['Intensity']
-    output.set_rep(r)
+    output.rep = r
     return output
 
+def to_mfcc_praat(praatpath, filename, num_coeffs = 12, win_len = 0.025, time_step = 0.01, max_freq = 7800):
+    script = 'mfcc.praat'
+    listing = run_script(praatpath, script, filename, num_coeffs, win_len, time_step, max_freq)
+    output = Representation(filename, (0,max_freq), attributes = attributes)
 
 
 def run_script(praatpath,name,*args):
@@ -65,8 +70,12 @@ def read_praat_out(text):
     if not text:
         return None
     lines = text.splitlines()
-    head = re.sub('[(]\w+[)]','',lines.pop(0))
-    head = head.split("\t")[1:]
+    head = None
+    while head is None:
+        l = lines.pop(0)
+        if l.startswith('time'):
+            head = re.sub('[(]\w+[)]','',l)
+            head = head.split("\t")[1:]
     output = {}
     for l in lines:
         if '\t' in l:
@@ -76,9 +85,13 @@ def read_praat_out(text):
             for j in range(len(line)):
                 v = line[j]
                 if v != '--undefined--':
-                    v = float(v)
+                    try:
+                        v = float(v)
+                    except ValueError:
+                        print(text)
+                        print(head)
                 else:
-                    v = None
+                    v = 0
                 values[head[j]] = v
             if values:
                 output[float(time)] = values

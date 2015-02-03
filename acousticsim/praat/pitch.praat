@@ -11,7 +11,7 @@
     To Pitch (ac)... 'timestep' 'minpitch' 15 yes 0.03 0.45 0.01 0.35 0.14 'maxpitch'
     frames = Get number of frames
 
-    output$ = "Time"+tab$+"Pitch"+newline$
+    output$ = "time"+tab$+"Pitch"+newline$
 
     for f from 1 to frames
         t = Get time from frame number... 'f'

@@ -194,7 +194,7 @@ class Formants(Representation):
 
     def __init__(self, filepath,max_freq, num_formants, win_len,
                     time_step, attributes = None, window_shape = 'gaussian'):
-        Representation.__init__(self, filepath, (0,max_freq), attributes = None)
+        Representation.__init__(self, filepath, (0,max_freq), attributes)
         self._num_formants = num_formants
 
         self._win_len = win_len
