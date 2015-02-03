@@ -6,7 +6,7 @@ except ImportError:
 def readme():
     with open('README.md') as f:
         return f.read()
-        
+
 setup(name='acousticsim',
       version='0.1',
       description='',
@@ -23,9 +23,11 @@ setup(name='acousticsim',
       url='https://github.com/mmcauliffe/python-acoustic-similarity',
       author='Michael McAuliffe',
       author_email='michael.e.mcauliffe@gmail.com',
-      packages=['acousticsim', 
+      packages=['acousticsim',
                 'acousticsim.distance',
                 'acousticsim.representations',
+                'acousticsim.processing',
+                'acousticsim.praat',
                 'acousticsim.tuning',
                 'acousticsim.clustering'],
       install_requires=[

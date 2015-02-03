@@ -9,7 +9,7 @@ import sys
 test_dir = os.path.dirname(os.path.abspath(__file__))
 test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
 sys.path.insert(0,test_path)
-from acousticsim.representations.pitch import to_pitch_zcd, Pitch
+from acousticsim.representations.pitch import to_pitch_zcd, Pitch, Harmonicity
 
 
 from numpy.testing import assert_array_almost_equal
@@ -20,6 +20,8 @@ filenames = ['s01_s0101a_big_910','s01_s0101a_care_1188',
             's01_s0101a_chief_831','s01_s0101a_choose_1149',
             's01_s0101a_come_340','s01_s0101a_dad_497',
             's01_s0101a_good_412','s01_s0101a_hall_99']
+
+filenames = ['104_toot_shadowing321']
 
 class ZCDTest(unittest.TestCase):
     def setUp(self):
@@ -46,6 +48,21 @@ class ACTest(unittest.TestCase):
             pitch.process()
             print(pitch.to_array())
             #raise(ValueError)
+
+class HarmTest(unittest.TestCase):
+    def setUp(self):
+        self.time_step = 0.01
+        self.min_pitch = 75
+
+    def test_ac(self):
+        return
+        for f in filenames:
+            wavpath = os.path.join(TEST_DIR,f+'.wav')
+            print(f)
+            harms = Harmonicity(wavpath,self.time_step, self.min_pitch)
+            harms.process()
+            print(harms.to_array())
+            raise(ValueError)
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,6 +5,7 @@ from numpy import (log10,zeros,abs,arange, hanning, pad, spacing, ceil,
 from numpy.fft import fft
 from scipy.signal import gaussian, argrelmax
 
+#import matplotlib.pyplot as plt
 
 from acousticsim.representations.base import Representation
 from .helper import preproc
@@ -19,9 +20,12 @@ class Pitch(Representation):
     _octave_jump_cost = 0.35
     _voice_change_cost = 0.14
     _num_candidates = 15
-    def __init__(self, filepath, time_step, freq_lims, window_shape = 'gaussian', attributes=None):
+    _periods_per_window = 3
+
+    def __init__(self, filepath, time_step, freq_lims,
+                window_shape = 'gaussian', attributes=None):
         Representation.__init__(self,filepath, freq_lims, attributes)
-        self._win_len = 3/self._freq_lims[0]
+        self._win_len = self._periods_per_window/self._freq_lims[0]
         self._window_shape = window_shape
         if self._window_shape == 'gaussian':
             self._win_len *= 2
@@ -41,7 +45,7 @@ class Pitch(Representation):
         maxpos = int(1/self._freq_lims[0]*self._sr)
         minpos = int(1/self._freq_lims[1]*self._sr)
         #print(minpos,maxpos)
-        indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2) + 1, nperstep)
+        indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2), nperstep)
         num_frames = len(indices)
         self._rep = dict()
         win_ac = correlate(window,window,'full')
@@ -51,7 +55,12 @@ class Pitch(Representation):
         candidate_matrix = list()
         for i in range(num_frames):
             X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)+1]
-            X = X * window
+            try:
+                X = X * window
+            except ValueError:
+                print(i,num_frames)
+                print(indices[i], len(proc))
+                raise(ValueError)
             X -= mean(X)
             #print(max(X)/maxproc)
             unvoicedR = self._voice_thresh + maximum(0,
@@ -63,17 +72,17 @@ class Pitch(Representation):
             sig_ac = ac[int(ac.size/2):] / max(ac)
 
             orig_ac = sig_ac/win_ac
-            #plt.plot(orig_ac)
-            #plt.show()
-            pos = minpos + argmax(orig_ac[minpos:maxpos])
-            #plt.plot(orig_ac[minpos:maxpos])
-            #plt.show()
-            cands = minpos + argrelmax(orig_ac[minpos:maxpos])[0][:self._num_candidates-1]
-            #print(cands)
+            cands = minpos + argrelmax(orig_ac[minpos:maxpos])[0]
+            values = orig_ac[cands]
+            inds = values.argsort()
+            cands = cands[inds][:self._num_candidates]
             for pos in cands:
                 f0 = 1/(pos/self._sr)
                 R = orig_ac[pos] - self._octave_cost * log(self._freq_lims[0] * pos)
                 candidates.append((f0,R))
+            #print(candidates)
+            #plt.plot(orig_ac)
+            #plt.show()
             candidate_matrix.append(candidates)
         def transition_cost(f1, f2):
             if f1 == 0 and f2 == 0:
@@ -135,17 +144,7 @@ class Pitch(Representation):
             if c < best:
                 best =c
                 state = y
-        def print_dptable(V):
-            s = "    " + " ".join(("%7d" % i) for i in range(len(V))) + "\n"
-            for y in range(self._num_candidates):
-                s += "%.5s: " % y
-                for v in V:
-                    try:
-                        s += "%.7s" % ("%f" % v[y])
-                    except KeyError:
-                        s += " " * 7
-                    s += " "
-                s += "\n"
+
         for i,p in enumerate(path[state]):
             #print(candidate_matrix[i][p])
             self._rep[indices[i]/self._sr] = candidate_matrix[i][p][0]
@@ -157,40 +156,75 @@ class Pitch(Representation):
             return False
         return True
 
-def viterbi(obs, states, start_p, trans_p, emit_p):
-    V = [{}]
-    path = {}
+class Harmonicity(Pitch):
+    #Praat parameters
+    _sil_thresh = 0.1
+    _voice_thresh = 0
+    _octave_cost = 0
+    _octave_jump_cost = 0
+    _voice_change_cost = 0
+    _num_candidates = 1
+    _periods_per_window = 4.5
 
-    # Initialize base cases (t == 0)
-    for y in states:
-        V[0][y] = start_p[y] * emit_p[y][obs[0]]
-        path[y] = [y]
+    def __init__(self, filepath, time_step, min_pitch,
+                window_shape = 'gaussian', attributes=None):
+        freq_lims = (min_pitch,None)
+        Pitch.__init__(self, filepath, time_step, freq_lims,
+                window_shape, attributes)
 
-    # Run Viterbi for t > 0
-    for t in range(1, len(obs)):
-        V.append({})
-        newpath = {}
+    def process(self):
+        self._sr, proc = preproc(self._filepath,alpha=None)
+        maxproc = max(proc)
+        #print(maxproc)
+        nperseg = int(self._win_len*self._sr)
+        nperstep = int(self._time_step*self._sr)
+        if self._window_shape == 'gaussian':
+            window = gaussian(nperseg+2,0.5*(nperseg-1)/2)[1:nperseg+2]
+        else:
+            window = hanning(nperseg+2)[1:nperseg+1]
 
-        for y in states:
-            (prob, state) = max((V[t-1][y0] * trans_p[y0][y] * emit_p[y][obs[t]], y0) for y0 in states)
-            V[t][y] = prob
-            newpath[y] = path[state] + [y]
+        maxpos = int(1/self._freq_lims[0]*self._sr)
+        indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2), nperstep)
+        num_frames = len(indices)
+        self._rep = dict()
+        win_ac = correlate(window,window,'full')
+        win_ac = win_ac[int(win_ac.size/2):]/ max(win_ac)
+        for i in range(num_frames):
+            X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)+1]
+            X = X * window
+            X -= mean(X)
+            ac = correlate(X,X,'full')
+            sig_ac = ac[int(ac.size/2):] / max(ac)
 
-        # Don't need to remember the old paths
-        path = newpath
-    n = 0           # if only one element is observed max is sought in the initialization values
-    if len(obs) != 1:
-        n = t
-    print_dptable(V)
-    (prob, state) = max((V[n][y], y) for y in states)
-    return (prob, path[state])
+            orig_ac = sig_ac/win_ac
+
+            cands = argrelmax(orig_ac[:maxpos])[0]
+            rs = orig_ac[cands]
+            if len(rs) > 0:
+                r = max(rs)
+            else:
+                r = -1
+            if r > 1:
+                r = 1/r
+
+            elif r < 0:
+                r = 0.0001
+                #print(argrelmax(orig_ac[:maxpos])[0])
+                #print(rs)
+                #plt.plot(orig_ac)
+                #plt.show()
+            self._rep[indices[i]/self._sr] = 10 * log10(r/(1-r))
+
+
+
 
 def to_pitch_zcd(gt):
-    import matplotlib.pyplot as plt
-    print(gt.shape)
-    nsamps = gt.shape[0]
-    nbands = get.shape[1]
-    for i in range(1,nsamps-1):
-        pass
-    plt.plot(gt)
-    plt.show()
+    pass
+#    import matplotlib.pyplot as plt
+#    print(gt.shape)
+#    nsamps = gt.shape[0]
+#    nbands = get.shape[1]
+#    for i in range(1,nsamps-1):
+#        pass
+#    plt.plot(gt)
+#    plt.show()

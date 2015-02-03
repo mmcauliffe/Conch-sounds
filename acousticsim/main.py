@@ -12,6 +12,8 @@ from acousticsim.representations import Envelopes, Mfcc
 
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
+from acousticsim.exceptions import AcousticSimError,NoWavError
+
 def _build_to_rep(**kwargs):
     rep = kwargs.get('rep', 'mfcc')
 
@@ -31,10 +33,7 @@ def _build_to_rep(**kwargs):
             num_filters = 8
         else:
             num_filters = 26
-    if win_len is not None:
-        use_window = True
-    else:
-        use_window = False
+    if win_len is None:
         win_len = 0.025
     if time_step is None:
         time_step = 0.01
@@ -128,10 +127,11 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
     to_rep = _build_to_rep(**kwargs)
 
     if kwargs.get('use_multi',False):
-        num_cores = int((3*cpu_count())/4)
-        print(num_cores)
-    else:
         num_cores = kwargs.get('num_cores', 1)
+        if num_cores == 0:
+            num_cores = int((3*cpu_count())/4)
+    else:
+        num_cores = 1
     output_sim = kwargs.get('output_sim',False)
 
     match_function = kwargs.get('match_function', 'dtw')
@@ -238,8 +238,12 @@ def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
     stop_check = kwargs.get('stop_check',None)
     call_back = kwargs.get('call_back',None)
 
-    files_one = os.listdir(directory_one)
-    files_two = os.listdir(directory_two)
+    files_one = [x for x in os.listdir(directory_one) if x.lower().endswith('.wav')]
+    if len(files_one) == 0:
+        raise(NoWavError(directory_one,os.listdir(directory_one)))
+    files_two = [x for x in os.listdir(directory_two) if x.lower().endswith('.wav')]
+    if len(files_two) == 0:
+        raise(NoWavError(directory_two,os.listdir(directory_two)))
     if call_back is not None:
         call_back('Mapping directories...')
         call_back(0,len(files_one)*len(files_two))
@@ -254,10 +258,6 @@ def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
                 cur += 1
                 if cur % 20 == 0:
                     call_back(cur)
-            if not x.lower().endswith('.wav'):
-                continue
-            if not y.lower().endswith('.wav'):
-                continue
             path_mapping.append((os.path.join(directory_one,x),
                         os.path.join(directory_two,y)))
 
@@ -298,6 +298,8 @@ def analyze_directories(directories, **kwargs):
         att_path = os.path.join(d,'attributes.txt')
         if os.path.exists(att_path):
             kwargs['attributes'].update(load_attributes(att_path))
+    if len(files) == 0:
+        raise(AcousticSimError("The directories specified do not contain any wav files"))
 
 
     if call_back is not None:
@@ -450,7 +452,7 @@ def rep_worker(job_q,return_dict, counter,rep_func,attributes, stopped):
         att['filename'] = filelabel
         try:
             att.update(attributes[filelabel])
-        except KeyError:
+        except (KeyError, TypeError):
             pass
         true_label = os.path.split(path)[1]
         rep = rep_func(filename,attributes=att)
@@ -554,7 +556,10 @@ def dist_worker(job_q,return_dict,counter,dist_func, output_sim,axb,cache, stopp
         dist1 = dist_func(base,model)
         if axb:
             dist2 = dist_func(shadow,model)
-            ratio = dist2 / dist1
+            try:
+                ratio = dist2 / dist1
+            except ZeroDivisionError:
+                ratio = -1
         else:
             ratio = dist1
         if output_sim:

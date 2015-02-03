@@ -1,6 +1,7 @@
 
 import numpy as np
 
+from acousticsim.processing.segmentation import to_segments
 
 class Representation(object):
     _duration = None
@@ -9,8 +10,13 @@ class Representation(object):
     _rep = dict()
     _true_label = None
     _attributes = None
+    _segments = None
+    _is_windowed = False
 
     def __init__(self,filepath, freq_lims, attributes):
+        self._vowels = dict()
+        self._transcription = list()
+        self._rep = dict()
         if attributes is None:
             attributes = dict()
         self._filepath = filepath
@@ -24,8 +30,22 @@ class Representation(object):
             else:
                 return getattr(self,key,None)
         elif self._rep is not None:
-            return self.get_value_at_time(key)
+            if isinstance(key, tuple):
+                return self.get_values_between_times(*key)
+            else:
+                return self.get_value_at_time(key)
         raise(KeyError)
+
+    def get_values_between_times(self, begin, end):
+        output = list()
+        times = sorted(self._rep.keys())
+        for t in times:
+            if t < begin:
+                continue
+            if t > end:
+                break
+            output.append(self._rep[t])
+        return output
 
     def get_value_at_time(self,time):
         if time in self._rep:
@@ -43,8 +63,8 @@ class Representation(object):
         begin_ind = end_ind - 1
         begin_time = times[begin_ind]
         end_time = times[end_ind]
-        begin_val = self._rep[begin_time]
-        end_val = self._rep[end_time]
+        begin_val = self[begin_time]
+        end_val = self[end_time]
         if begin_val is None:
             return None
         if end_val is None:
@@ -53,7 +73,13 @@ class Representation(object):
         if isinstance(begin_val,list):
             return_val = list()
             for i in range(len(begin_val)):
-                return_val.append((begin_val[i] * (1 - percent)) + (end_val[i] * (percent)))
+                if isinstance(begin_val[i],tuple):
+                    v = (begin_val[i][0] * (1 - percent)) + (end_val[i][0] * (percent))
+                    return_val.append(v)
+                else:
+                    return_val.append((begin_val[i] * (1 - percent)) + (end_val[i] * (percent)))
+            return return_val
+
         else:
             return (begin_val * (1 - percent)) + (end_val * (percent))
 
@@ -71,20 +97,86 @@ class Representation(object):
         return output
 
     def window(self, win_len, time_step):
+        if self._is_windowed:
+            return False
         pass
+
+    def time_from_index(self,index):
+        if index >= len(self):
+            return self._duration
+        return sorted(self._rep.keys())[index]
 
     def segment(self,thresh):
-        pass
+        if not self._is_windowed:
+            return False
+        segments, means = to_segments(self.to_array(), threshold = thresh,return_means=True)
+        begin = 0
+        self._segments = dict()
+        print(segments)
+        for i,end_frame in enumerate(segments):
+            end_time = self.time_from_index(end_frame)
+            self._segments[begin, end_time] = means[i]
+            begin = end_time
+        return True
 
+    @property
     def rep(self):
         output = list()
         for k in sorted(self._rep.keys()):
             output.append(self._rep[k])
         return np.array(output)
 
-    def set_rep(self, rep):
-        self._rep = rep
+    @rep.setter
+    def rep(self, value):
+        self._rep = value
+
+    def items(self):
+        for k in sorted(self._rep.keys()):
+            yield (k,self._rep[k])
+
+    def keys(self):
+        for k in sorted(self._rep.keys()):
+            yield k
+
+    def values(self):
+        for k in sorted(self._rep.keys()):
+            yield self._rep[k]
+
+    def first(self):
+        k = sorted(self._rep.keys())[0]
+        return self._rep[k]
+
+    def __len__(self):
+        return len(self._rep.keys())
+
+    def __iter__(self):
+        for k in sorted(self._rep.keys()):
+            yield self._rep[k]
+
+    @property
+    def vowel_times(self):
+        return self._vowels
+
+    @vowel_times.setter
+    def vowel_times(self, times):
+        self._vowels = times
+
+    @property
+    def transcription(self):
+        return self._transcription
+
+    @transcription.setter
+    def transcription(self, value):
+        self._transcription = value
+
+    @property
+    def times(self):
+        return sorted(self._rep.keys())
 
     @property
     def shape(self):
         return self._rep.shape
+
+    @property
+    def sampling_rate(self):
+        return self._sr
