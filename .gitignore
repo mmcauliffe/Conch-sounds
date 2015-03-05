@@ -34,4 +34,5 @@ nosetests.xml
 .project
 .pydevproject
 *.txt
+!requirements.txt
 *.bat

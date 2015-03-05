@@ -1,0 +1,9 @@
+numpy
+scipy
+scikit-learn
+networkx
+matplotlib
+nose
+sphinx>=1.3b3
+numpydoc
+

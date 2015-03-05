@@ -32,6 +32,9 @@ setup(name='acousticsim',
                 'acousticsim.clustering'],
       install_requires=[
             'numpy',
-            'scipy'
+            'scipy',
+            'scikit-learn',
+            'networkx',
+
       ]
       )
