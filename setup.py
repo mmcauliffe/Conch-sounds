@@ -1,14 +1,27 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+import sys
+from setuptools import setup
+from setuptools.command.test import test as TestCommand
+
+import acousticsim
 
 def readme():
     with open('README.md') as f:
         return f.read()
 
+
+class PyTest(TestCommand):
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = ['--strict', '--verbose', '--tb=long', 'tests']
+        self.test_suite = True
+
+    def run_tests(self):
+        import pytest
+        errcode = pytest.main(self.test_args)
+        sys.exit(errcode)
+
 setup(name='acousticsim',
-      version='0.1',
+      version=acousticsim.__version__,
       description='',
       long_description='',
       classifiers=[
@@ -36,5 +49,9 @@ setup(name='acousticsim',
             'scikit-learn',
             'networkx',
 
-      ]
+      ],
+    cmdclass={'test': PyTest},
+    extras_require={
+        'testing': ['pytest'],
+    }
       )
