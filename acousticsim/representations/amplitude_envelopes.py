@@ -30,7 +30,7 @@ class Envelopes(Representation):
         self.process()
 
 
-    def process(self, mode = 'downsample'):
+    def process(self, mode = 'downsample', debug = False):
         """Generate amplitude envelopes from a full path to a .wav, following
         Lewandowski (2012).
 
@@ -87,4 +87,5 @@ class Envelopes(Representation):
         for i in range(envs.shape[0]):
             self._rep[i/self._sr] = envs[i,:]
         #Don't know if this is the best way to do it
-
+        if debug:
+            return proc
