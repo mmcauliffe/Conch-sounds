@@ -13,7 +13,7 @@ def to_powerspec(x, sr, win_len, time_step):
     nfft = int(2**(ceil(log(nperseg)/log(2))))
     window = hanning(nperseg+2)[1:nperseg+1]
 
-    indices = arange(int(nperseg/2), x.shape[0] - int(nperseg/2) + 1, nperstep)
+    indices = arange(int(nperseg/2), x.shape[0] - (int(nperseg/2) + 1), nperstep)
     num_frames = len(indices)
 
     #pspec = zeros((num_frames,int(nfft/2)+1))

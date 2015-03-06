@@ -19,13 +19,13 @@ before_install:
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy scikit-learn networkx matplotlib nose
   # Coverage packages are on my binstar channel
-  - pip install -q coveralls nose-cov
+  - pip install -q coveralls coverage
   - python setup.py install
 
 # Run test
 script:
-  - nosetests --with-cov --cov acousticsim --cov-config .coveragerc --logging-level=INFO
+  - "coverage run --source=sandman setup.py test"
 
 # Calculate coverage
 after_success:
-  - coveralls --config_file .coveragerc
+  - coveralls

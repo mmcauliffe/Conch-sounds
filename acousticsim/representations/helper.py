@@ -40,17 +40,20 @@ def preproc(path,sr=16000,alpha=0.95):
 
     """
     oldsr,sig = wavfile.read(path)
+    #if oldsr != 16000:
+#       raise(E
     try:
         sig = sig[:,0]
     except IndexError:
         pass
 
-    if True and sr != oldsr:
+    if False and sr != oldsr:
         t = len(sig)/oldsr
         numsamp = t * sr
         proc = resample(sig,numsamp)
     else:
         proc = sig
+        sr = oldsr
     #proc = proc / 32768
     if alpha is not None and alpha != 0:
         proc = lfilter([1., -alpha],1,proc)

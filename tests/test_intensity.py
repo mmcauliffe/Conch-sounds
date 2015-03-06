@@ -6,9 +6,6 @@ import unittest
 import os
 import sys
 
-test_dir = os.path.dirname(os.path.abspath(__file__))
-test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
-sys.path.insert(0,test_path)
 from acousticsim.representations.intensity import Intensity
 
 

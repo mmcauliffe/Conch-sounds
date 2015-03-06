@@ -4,15 +4,7 @@ from numpy import array,sum,sqrt
 from numpy.linalg import norm
 import unittest
 import os
-try:
-    from acousticsim.representations.gammatone import to_gammatone
-except ImportError:
-    import sys
-
-    test_dir = os.path.dirname(os.path.abspath(__file__))
-    test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
-    sys.path.append(test_path)
-    from acousticsim.representations.gammatone import to_gammatone
+from acousticsim.representations.gammatone import to_gammatone
 
 from scipy.io import loadmat
 
@@ -35,6 +27,8 @@ class GammatoneTest(unittest.TestCase):
         for f in filenames:
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             matpath = os.path.join(TEST_DIR,f+'_gammatone_env.mat')
+            if not os.path.exists(matpath):
+                continue
             m = loadmat(matpath)
             bm, env = to_gammatone(wavpath, self.num_bands,self.freq_lims)
             #pyplot.plot(bm)

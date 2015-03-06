@@ -3,9 +3,6 @@ import unittest
 import os
 import sys
 
-test_dir = os.path.dirname(os.path.abspath(__file__))
-test_path = os.path.split(os.path.split(os.path.split(test_dir)[0])[0])[0]
-sys.path.insert(0,test_path)
 from acousticsim.praat import to_formants_praat, to_pitch_praat, to_intensity_praat
 
 from numpy.testing import assert_array_almost_equal

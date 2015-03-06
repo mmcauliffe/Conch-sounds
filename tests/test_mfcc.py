@@ -23,8 +23,13 @@ class MfccTest(unittest.TestCase):
 
     def test(self):
         for f in filenames:
+            print(f)
+            if f.startswith('silence'):
+                continue
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             matpath = os.path.join(TEST_DIR,f+'_mfcc.mat')
+            if not os.path.exists(matpath):
+                continue
             m = loadmat(matpath)
             mfcc = Mfcc(wavpath,self.freq_lims,self.numCC,self.winLen,
                                     self.timeStep,num_filters=self.num_filters,
