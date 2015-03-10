@@ -24,7 +24,6 @@ class GammatoneTest(unittest.TestCase):
 
 
     def test_gammatone(self):
-        return
         for f in filenames:
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             matpath = os.path.join(TEST_DIR,f+'_gammatone_env.mat')
@@ -37,6 +36,7 @@ class GammatoneTest(unittest.TestCase):
             assert_array_almost_equal(m['bm'],bm)
             assert_array_almost_equal(m['env'],env)
             #raise(ValueError)
+            break
 
 
 if __name__ == '__main__':
