@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mmcauliffe/python-acoustic-similarity.svg?branch=master)](https://travis-ci.org/mmcauliffe/python-acoustic-similarity)[![Coverage Status](https://coveralls.io/repos/mmcauliffe/python-acoustic-similarity/badge.svg)](https://coveralls.io/r/mmcauliffe/python-acoustic-similarity)
+
 python-acoustic-similarity
 ==================
 

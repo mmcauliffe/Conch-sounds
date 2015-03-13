@@ -65,6 +65,7 @@ def resample(proc, factor, precision = 1):
     return resampled
 
 def sinc_interp1d(x,y, order):
+    pass
 
 def preproc(path,sr=16000,alpha=0.95):
     """Preprocess a .wav file for later processing.  Currently assumes a
@@ -88,11 +89,14 @@ def preproc(path,sr=16000,alpha=0.95):
 
     """
     oldsr,sig = wavfile.read(path)
+    #if oldsr != 16000:
+#       raise(E
     try:
         sig = sig[:,0]
     except IndexError:
         pass
-    if sr != oldsr:
+
+    if False and sr != oldsr:
         t = len(sig)/oldsr
         numsamp = int(t * sr)
         proc = resample(sig,numsamp)
@@ -100,7 +104,7 @@ def preproc(path,sr=16000,alpha=0.95):
         proc = sig
         sr = oldsr
     #proc = proc / 32768
-    if alpha != 0 and alpha is not None:
+    if alpha is not None and alpha != 0:
         proc = lfilter([1., -alpha],1,proc)
     return sr,proc
 
@@ -152,7 +156,7 @@ def fftfilt(b, x, *n):
             # lengths that are powers of 2 are considered:
             N = 2**arange(ceil(log2(N_b)),floor(log2(N_x)))
             cost = ceil(N_x/(N-N_b+1))*N*(log2(N)+1)
-            if cost:
+            if len(cost) > 0:
                 N_fft = N[argmin(cost)]
             else:
                 N_fft = 2**nextpow2(N_b+N_x-1)
