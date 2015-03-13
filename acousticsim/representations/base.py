@@ -174,6 +174,10 @@ class Representation(object):
         return sorted(self._rep.keys())
 
     @property
+    def vowel_durations(self):
+        return [x[1] - x[0] for x in sorted(self._vowels.keys())]
+
+    @property
     def shape(self):
         return self._rep.shape
 

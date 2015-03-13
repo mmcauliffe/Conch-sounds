@@ -70,7 +70,7 @@ class Mfcc(Representation):
     _is_windowed = True
     def __init__(self, filepath, freq_lims, num_coeffs, win_len,
                         time_step, num_filters = 26, use_power = False,
-                        attributes=None):
+                        attributes=None, deltas = False):
         Representation.__init__(self,filepath, freq_lims, attributes)
         self._num_coeffs = num_coeffs
         self._ranges = [None] * self._num_coeffs
@@ -78,7 +78,7 @@ class Mfcc(Representation):
         self._time_step = time_step
         self._num_filters = num_filters
         self._use_power = use_power
-
+        self._deltas = deltas
         self.process()
 
     def filter_bank(self,nfft):
@@ -179,6 +179,21 @@ class Mfcc(Representation):
             if not self._use_power:
                 dctSpectrum = dctSpectrum[1:]
             self._rep[k] = dctSpectrum[:self._num_coeffs]
+        if self._deltas:
+            keys = sorted(self._rep.keys())
+            for i,k in enumerate(keys):
+                if i == 0 or i == len(self._rep.keys()) - 1:
+                    self._rep[k] = array(list(self._rep[k]) + [0 for x in range(self._num_coeffs)])
+                else:
+                    deltas = self._rep[keys[i+1]][:self._num_coeffs] - self._rep[keys[i-1]][:self._num_coeffs]
+                    self._rep[k] = array(list(self._rep[k]) + list(deltas))
+            for i,k in enumerate(keys):
+                if i == 0 or i == len(self._rep.keys()) - 1:
+                    self._rep[k] = array(list(self._rep[k]) + [0 for x in range(self._num_coeffs)])
+                else:
+                    deltas = self._rep[keys[i+1]][self._num_coeffs:self._num_coeffs*2] - self._rep[keys[i-1]][self._num_coeffs:self._num_coeffs*2]
+                    self._rep[k] = array(list(self._rep[k]) + list(deltas))
+
         if debug:
             return pspec,aspec
 

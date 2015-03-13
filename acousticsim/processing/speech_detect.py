@@ -10,6 +10,8 @@ import numpy as np
 import pylab as P
 
 from acousticsim.representations.mfcc import Mfcc
+from acousticsim.representations.amplitude_envelopes import Envelopes
+from acousticsim.representations.gammatone import Gammatone
 from acousticsim.representations.pitch import Pitch, Harmonicity
 
 #Features:
@@ -99,6 +101,64 @@ def read_phones(path, dialect = 'timit', sr = None):
             raise(NotImplementedError)
     return output
 
+class SpeechClassifierLandmarks(object):
+    _freq_lims = (80,4000)
+    _num_bands = 4
+
+    def __init__(self, parameters = 'timit'):
+        pass
+
+    def train(self,dialect = 'timit'):
+        #assume training on TIMIT
+        if dialect == 'timit':
+            path = TIMIT_DIR
+            train_dir = os.path.join(path, 'TRAIN')
+            segment_set = TIMIT_SEGMENT_SET
+            wrdExt = '.wrd'
+            phnExt = '.phn'
+        elif dialect == 'buckeye':
+            train_dir = BUCKEYE_DIR
+            segment_set = BUCKEYE_SEGMENT_SET
+            wrdExt = '.words'
+            phnExt = '.phones'
+
+        words = []
+        phones = []
+        wavs = []
+        for root, subdirs, files in os.walk(train_dir):
+            for f in files:
+                if f.lower().endswith(wrdExt):
+                    words.append(os.path.join(root,f))
+                elif f.lower().endswith(phnExt):
+                    phones.append(os.path.join(root,f))
+                elif f.lower().endswith('.wav'):
+                    wavs.append(os.path.join(root,f))
+        dialogs = align_dialog_info(words, phones,wavs)
+        values = [defaultdict(list) for i in range(self._num_bands)]
+        for (i,(d,info)) in enumerate(dialogs.items()):
+            print(i,len(dialogs), d)
+            ampenvs = Envelopes(info['wav'],self._freq_lims, self._num_bands)
+
+            #self.update_range(ampenvs)
+            phones = read_phones(info['phones'],sr=ampenvs.sampling_rate,dialect=dialect)
+            previous = None
+            for p in phones:
+                #if p[0] in segment_set['V']:
+                #    phone_class = 'V'
+                #else:
+                #    phone_class = 'NV'
+                for k,v in segment_set.items():
+                    if p[0] in v:
+                        phone_class = k
+                        break
+                else:
+                    continue
+                print(p)
+                bands = ampenvs[p[1],p[2]]
+                P.plot(bands)
+                P.show()
+                break
+
 class SpeechClassifier(object):
     _num_coeffs = 3
     _use_priors = True
@@ -109,29 +169,59 @@ class SpeechClassifier(object):
     def __init__(self, parameters = 'timit'):
         self._states = ['V','C','SIL', 'S']
         if parameters == 'timit':
-            self._guass_values = {'S': [106.69858295806945, 13.788101941585037,
-                                        -2.7157271472866578, 10.436144308052299,
-                                        -4.7651752344952127, 16.40640775462192,
-                                        128.13886536351166, 94.631016584050073,
-                                        5.529628657413225, 4.825418319490506],
-                                'SIL': [67.260125656339369, 16.364258978070932,
-                                        -23.994604651768739, 11.828299652725498,
-                                        -4.1936611952894518, 12.37733389972451,
-                                        29.881670896128725, 93.952639459787918,
-                                        -0.94090835139375639, 4.0782367578024186],
-                                'V': [121.79361965642316, 12.147622531365984,
-                                        -10.568844151240485, 10.181818034234762,
-                                        -9.0190738510271338, 18.725133613304067,
-                                        142.58697521904119, 103.22522811014412,
-                                        5.8068054070370332, 4.6899801286927874],
-                                'C': [98.669101415828123, 12.969681154558938,
-                                        -31.383989078115722, 15.356287596393777,
-                                        -3.6024466565312143, 13.052742055994578,
-                                        33.589958704570364, 97.670791382812936,
-                                        -0.0012759997855903446, 3.6931402207970456]}
+            self._guass_values = {'S': [106.69858295806942, 13.788101941585037,
+                                    -2.7157271472866578, 10.436144308052297,
+                                    -4.7651752344952119, 16.40640775462192,
+                                    -0.20527335955567133, 10.849061304730101,
+                                    -0.47118579058647031, 8.2687453916999427,
+                                    0.37763342640775416, 9.433485919731508,
+                                    1.7238440536507622, 12.415721048856815,
+                                    -4.1644962118506568, 11.289866989968807,
+                                    -1.087066518341647, 12.346358683908502,
+                                    122.57544878814136, 98.409504759980436,
+                                    5.5296286574132241, 4.825418319490506],
+                                'C': [98.669101415828138, 12.969681154558939,
+                                    -31.383989078115722, 15.356287596393775,
+                                    -3.6024466565312148, 13.052742055994578,
+                                    2.8805856059435517, 14.843254671285834,
+                                    1.8735038149092653, 13.428119472685694,
+                                    0.20547684191851148, 10.865016028080774,
+                                    -1.1094621990978419, 21.253209202475396,
+                                    4.5868033781563868, 16.109931025613381,
+                                    -0.30797358082648352, 17.285745939222192,
+                                    27.162001644890676, 86.296812928620383,
+                                    -0.0012759997855903513, 3.6931402207970461],
+                                'SIL': [67.260125656339383, 16.364258978070932,
+                                    -23.994604651768732, 11.8282996527255,
+                                    -4.1936611952894509, 12.377333899724508,
+                                    0.1952864254960883, 20.186446606791733,
+                                    -1.7874594107406285, 10.183650016903522,
+                                    -1.24398059928302, 11.261290783446572,
+                                    9.3859576265900202, 23.711655267287838,
+                                    0.0062866497091458437, 14.195477763466464,
+                                    -1.247745911984363, 17.131753916206851,
+                                    25.216211813260664, 85.720055043911827,
+                                    -0.94090835139375628, 4.0782367578024195],
+                                'V': [121.79361965642315, 12.147622531365982,
+                                    -10.568844151240489, 10.181818034234762,
+                                    -9.0190738510271338, 18.72513361330407,
+                                    -1.8221555596816867, 10.023815472882168,
+                                    0.1786402424590863, 6.5160231749873745,
+                                    0.52604413889141155, 8.1725722837946346,
+                                    -5.9174582469826369, 10.497004578953135,
+                                    -1.4707037149398738, 9.7730479831706152,
+                                    1.2984439177165692, 9.7936713622437921,
+                                    134.39679444095819, 109.7964618588956,
+                                    5.8068054070370332, 4.6899801286927882]}
             self._ranges = [[30.120333629226856, 159.66897139827836],
                             [-77.835593153485163, 32.870167900828804],
                             [-69.726366723368699, 62.529506799142993],
+                            [-77.474592423943136, 89.850673096664636],
+                            [-62.107330271953956, 63.23772724196985],
+                            [-74.249433084205918, 65.588485849292454],
+                            [-127.00926808091104, 132.30046306413362],
+                            [-87.65436477838243, 89.160571452999051],
+                            [-113.44799223511505, 110.40706447575778],
                             [0.0, 592.59259259259261],
                             [-39.999565683801926, 26.048043267524864]]
             self._priors = {'SIL': 0.23807641179745634,
@@ -196,9 +286,9 @@ class SpeechClassifier(object):
                                     'C': 0.21645109775021149,
                                     'S': 0.11089245079011777}}
         else:
-            self._guass_values = {x: [0 for i in range((self._num_coeffs+2)*2)]
+            self._guass_values = {x: [0 for i in range((self._num_coeffs*3+2)*2)]
                                         for x in self._states}
-            self._ranges = [[np.inf,-np.inf] for x in range((self._num_coeffs+2))]
+            self._ranges = [[np.inf,-np.inf] for x in range((self._num_coeffs*3+2))]
             self._priors = {x: 0 for x in self._states}
             self._transitions = {x: {y: 0 for y in self._states} for x in self._states}
             self._initial_probs = {x: 0 for x in self._states}
@@ -215,7 +305,7 @@ class SpeechClassifier(object):
 
     def get_features(self, path):
         mfcc = Mfcc(path, self.freq_lims, self._num_coeffs, 0.025,
-                    0.01, num_filters = 26, use_power = True)
+                    0.01, num_filters = 26, use_power = True, deltas = True)
         pitch = Pitch(path, self.time_step, (75,600))
         pitch.process()
         harmonicity = Harmonicity(path, self.time_step, 75)
@@ -223,8 +313,11 @@ class SpeechClassifier(object):
         return mfcc, pitch, harmonicity
 
     def update_range(self, mfcc, pitch, harmonicity):
+        num_cc = self._num_coeffs
+        if mfcc._deltas:
+            num_cc *= 3
         coeffs = mfcc.to_array()
-        for i in range(self._num_coeffs):
+        for i in range(num_cc):
             t = coeffs[:,i]
             try:
                 mini = np.min(t)
@@ -237,18 +330,18 @@ class SpeechClassifier(object):
                 self._ranges[i][1] = maxi
         pitches = pitch.to_array()
         mini = np.min(pitches)
-        if mini < self._ranges[self._num_coeffs][0]:
-            self._ranges[self._num_coeffs][0] = mini
+        if mini < self._ranges[num_cc][0]:
+            self._ranges[num_cc][0] = mini
         maxi = np.max(pitches)
-        if maxi > self._ranges[self._num_coeffs][1]:
-            self._ranges[self._num_coeffs][1] = maxi
+        if maxi > self._ranges[num_cc][1]:
+            self._ranges[num_cc][1] = maxi
         harms = harmonicity.to_array()
         mini = np.min(harms)
-        if mini < self._ranges[self._num_coeffs+1][0]:
-            self._ranges[self._num_coeffs+1][0] = mini
+        if mini < self._ranges[num_cc+1][0]:
+            self._ranges[num_cc+1][0] = mini
         maxi = np.max(harms)
-        if maxi > self._ranges[self._num_coeffs+1][1]:
-            self._ranges[self._num_coeffs+1][1] = maxi
+        if maxi > self._ranges[num_cc+1][1]:
+            self._ranges[num_cc+1][1] = maxi
 
 
     def train(self,dialect = 'timit'):
@@ -268,7 +361,7 @@ class SpeechClassifier(object):
         words = []
         phones = []
         wavs = []
-        for root, subdirs, files in os.walk(train_dir):
+        for root, subdirs, files in sorted(os.walk(train_dir)):
             for f in files:
                 if f.lower().endswith(wrdExt):
                     words.append(os.path.join(root,f))
@@ -277,7 +370,7 @@ class SpeechClassifier(object):
                 elif f.lower().endswith('.wav'):
                     wavs.append(os.path.join(root,f))
         dialogs = align_dialog_info(words, phones,wavs)
-        values = [defaultdict(list) for i in range(self._num_coeffs+2)]
+        values = [defaultdict(list) for i in range(self._num_coeffs*3+2)]
         for (i,(d,info)) in enumerate(dialogs.items()):
             print(i,len(dialogs), d)
             mfcc, pitch, harmonicity = self.get_features(info['wav'])
@@ -300,15 +393,16 @@ class SpeechClassifier(object):
                 else:
                     self._transitions[previous][phone_class] += 1
                 coeffs = mfcc[p[1],p[2]]
-                for i in range(self._num_coeffs):
+                for i in range(self._num_coeffs*3):
+                    t = [x[i] for x in coeffs]
                     values[i][phone_class].extend(t)
                 pitches = pitch[p[1],p[2]]
                 t = [x for x in pitches]
-                values[self._num_coeffs][phone_class].extend(t)
+                values[self._num_coeffs*3][phone_class].extend(t)
 
                 harms = harmonicity[p[1],p[2]]
                 t = [x for x in harms]
-                values[self._num_coeffs+1][phone_class].extend(t)
+                values[self._num_coeffs*3+1][phone_class].extend(t)
 
                 previous = phone_class
             #break
@@ -317,7 +411,7 @@ class SpeechClassifier(object):
         for k in self._guass_values.keys():
             #if k not in ['V','NV']:
             #    continue
-            for i in range(self._num_coeffs+2):
+            for i in range(self._num_coeffs*3+2):
                 ind = i * 2
                 self._guass_values[k][ind] = np.mean(values[i][k])
                 self._guass_values[k][ind+1] = np.std(values[i][k])
@@ -341,8 +435,8 @@ class SpeechClassifier(object):
             val = self._priors[category]
         else:
             val = 1 /len(self._states)
-        for i in range(self._num_coeffs+2):
-            if not use_pitch_info and i == self._num_coeffs:
+        for i in range(self._num_coeffs*3+2):
+            if not use_pitch_info and i == self._num_coeffs*3+2:
                 break
             ind = i * 2
             mean = self._guass_values[category][ind]
@@ -352,7 +446,7 @@ class SpeechClassifier(object):
         return val
 
     def predict(self,feature_values, use_pitch_info=False):
-        if len(feature_values) != self._num_coeffs+2:
+        if len(feature_values) != self._num_coeffs*3+2:
             return None
         best_value = 0
         best_cat = None
@@ -373,7 +467,7 @@ class SpeechClassifier(object):
         vnv = self.predict_file(path, norm_amp = True,
                             alg = 'bayes',use_segments=False,
                             new_range = speaker_ranges, debug = debug)
-
+        #print(vnv)
         vowels = [[x[1],x[2]] for x in vnv if x[0] == 'V' and x[2] - x[1] > self.time_step*1.5]
         #print(vowels)
         if len(vowels) == 0:
@@ -406,10 +500,10 @@ class SpeechClassifier(object):
 
         mfcc, pitch, harmonicity = self.get_features(path)
         if new_range is not None:
-            mfcc._ranges = new_range[:self._num_coeffs]
+            mfcc._ranges = new_range[:self._num_coeffs*3]
 
         if norm_amp:
-            mfcc.norm_amp(self._ranges[:self._num_coeffs])
+            mfcc.norm_amp(self._ranges[:self._num_coeffs*3])
         output = list()
         if use_segments:
             if not mfcc.segment(0.1):
@@ -566,6 +660,7 @@ class SpeechClassifier(object):
 
 if __name__ == '__main__':
     sc = SpeechClassifier('new')
+    #sc = SpeechClassifierLandmarks('new')
     sc.train(dialect = 'timit')
     #sc.test(dialect = 'timit',debug=False)
     with open('output_timit.txt','w') as f:
@@ -574,3 +669,4 @@ if __name__ == '__main__':
         print('Priors',sc._priors, file=f)
         print('Initial probs',sc._initial_probs, file=f)
         print('Transitions',sc._transitions, file=f)
+
