@@ -77,8 +77,9 @@ class Envelopes(Representation):
             env = filtfilt(b,a,proc)
             env = abs(hilbert(env))
             if mode == 'downsample':
-                env = resample(env,int(ceil(len(env)/int(ceil(self._sr/120)))))
-                #env = decimate(env,int(ceil(self._sr/120)))
+                #env = resample(env,int(ceil(len(env)/int(ceil(self._sr/120)))))
+                print(int(ceil(self._sr/120)))
+                env = decimate(env,int(ceil(self._sr/120)))
             envs.append(env)
         envs = array(envs).T
         if mode == 'downsample':

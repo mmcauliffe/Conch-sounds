@@ -35,7 +35,6 @@ class EnvelopeTest(unittest.TestCase):
             [1.0000  , 1.1957 , -0.1477 ,  -0.1166  ,  0.2388],]
 
     def test_envelope_gen(self):
-        return
         for f in filenames:
             print(f)
             wavpath = os.path.join(TEST_DIR,f+'.wav')
