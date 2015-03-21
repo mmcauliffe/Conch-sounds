@@ -1,5 +1,6 @@
 
 import unittest
+import pytest
 import os
 import sys
 
@@ -20,8 +21,8 @@ class PraatFormantsTest(unittest.TestCase):
         self.win_len = 0.025
         self.time_step = 0.01
 
+    @pytest.mark.xfail
     def test_lpc(self):
-        return
         for f in filenames:
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             #print(f)
@@ -36,8 +37,8 @@ class PraatPitchTest(unittest.TestCase):
         self.min_freq = 75
         self.time_step = 0.01
 
+    @pytest.mark.xfail
     def test_ac(self):
-        return
         for f in filenames:
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
@@ -54,8 +55,8 @@ class PraatIntensityTest(unittest.TestCase):
     def setUp(self):
         self.time_step = 0.01
 
+    @pytest.mark.xfail
     def test_intensity(self):
-        return
         for f in filenames:
             #print(f)
             wavpath = os.path.join(TEST_DIR,f+'.wav')

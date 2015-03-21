@@ -238,7 +238,7 @@ class LpcFormants(Formants):
         nperstep = int(self._time_step*new_sr)
 
         if self._window_shape == 'gaussian':
-            window = gaussian(nperseg+2,0.45*(nperseg-1)/2)[1:nperseg+2]
+            window = gaussian(nperseg+2,0.45*(nperseg-1)/2)[1:nperseg+1]
         else:
             window = hanning(nperseg+2)[1:nperseg+1]
         indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2) + 1, nperstep)
@@ -246,7 +246,7 @@ class LpcFormants(Formants):
 
         formants = zeros((num_frames,self._num_formants))
         for i in range(num_frames):
-            X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)+1]
+            X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
             X = X * window
             A, e, k  = lpc(X,self._num_formants*2)
 

@@ -3,6 +3,7 @@
 from numpy import array,sum,sqrt,abs
 from numpy.linalg import norm
 import unittest
+import pytest
 import os
 
 from acousticsim.representations.helper import preproc, resample
@@ -14,7 +15,7 @@ from numpy.testing import assert_array_almost_equal
 
 TEST_DIR = os.path.abspath('tests/data')
 
-
+@pytest.mark.xfail
 def test_decimate():
     from numpy import arange,sin
     from scipy.signal import decimate, resample, cheby1, lfilter, filtfilt

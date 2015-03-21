@@ -3,6 +3,7 @@
 from numpy import array,sum,sqrt
 from numpy.linalg import norm
 import unittest
+import pytest
 import os
 import sys
 
@@ -19,8 +20,8 @@ class IntensityTest(unittest.TestCase):
     def setUp(self):
         self.time_step = 0.01
 
-    def test_ac(self):
-        return
+    @pytest.mark.xfail
+    def test_intensity(self):
         for f in filenames:
             f = os.path.splitext(f)[0]
             wavpath = os.path.join(TEST_DIR,f+'.wav')

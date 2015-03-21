@@ -23,19 +23,21 @@ class LpcFormantsTest(unittest.TestCase):
         self.win_len = 0.025
         self.time_step = 0.01
 
+
     def test_lpc(self):
-        return
-        sc_101 = SpeechClassifier('new')
-        sc_101.train_range(r'C:\Users\michael\Documents\Data\ATI_new\Shadowers\Male\124')
+        #sc_101 = SpeechClassifier('new')
+        #sc_101.train_range(r'C:\Users\michael\Documents\Data\ATI_new\Shadowers\Male\124')
         for f in filenames:
+            if f.startswith('silence'):
+                continue
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
             formants = LpcFormants(wavpath,self.max_freq, self.num_formants, self.win_len,self.time_step)
             #print(formants.to_array())
             #print(formants.to_array('bandwidth'))
-            sc = SpeechClassifier('timit')
-            vowels = sc.find_vowels(wavpath, sc_101._ranges, num_vowels = 1, debug = True)
-            print(vowels)
+            #sc = SpeechClassifier('timit')
+            #vowels = sc.find_vowels(wavpath, sc_101._ranges, num_vowels = 1, debug = True)
+            #print(vowels)
             #vnv = sc.predict_file(wavpath,win_len=self.win_len,
                                 #time_step=self.time_step, norm_amp = True,
                                 #alg = 'bayes',use_segments=False,new_range = sc_101._ranges)
