@@ -1,5 +1,5 @@
 import os
-from multiprocessing import Process, Manager, Queue, cpu_count, Value, Lock
+from multiprocessing import Process, Manager, Queue, cpu_count, Value, Lock, JoinableQueue
 import time
 from queue import Empty, Full
 from collections import OrderedDict
@@ -50,6 +50,10 @@ def _build_to_rep(**kwargs):
                                     win_len=win_len,
                                     time_step=time_step,
                                     use_power = use_power)
+    elif rep in ['mhec','gammatone','melbank','formats','pitch','prosody']:
+        raise(NotImplementedError)
+    else:
+        raise(Exception("The type of representation must be one of: 'envelopes', 'mfcc'."))
     #elif rep == 'mhec':
     #    to_rep = partial(to_mhec, freq_lims=freq_lims,
     #                                num_coeffs=num_coeffs,
@@ -144,38 +148,6 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
         dist_func = dtw_distance
 
     attributes = kwargs.get('attributes',dict())
-    #asim = dict()
-    #if call_back is not None:
-        #call_back('Calculating acoustic similarity...')
-        #call_back(0,len(path_mapping))
-        #cur = 0
-    #if cache is None:
-        #cache = dict()
-    #for i,pm in enumerate(path_mapping):
-        #if stop_check is not None and stop_check():
-            #return
-        #if call_back is not None:
-            #cur += 1
-            #if cur % 20 == 0:
-                #call_back(cur)
-        #allgood = False
-
-        #for filepath in pm:
-            #if not filepath.lower().endswith('.wav'):
-                #break
-            #if filepath not in cache:
-                #cache[filepath] = to_rep(filepath)
-        #else:
-            #allgood = True
-        #if not allgood:
-            #continue
-        #dist_val = dist_func(cache[pm[0]],cache[pm[1]])
-        #if output_sim:
-            #try:
-                #dist_val = 1/dist_val
-            #except ZeroDivisionError:
-                #dist_val = 1
-        #asim[pm]=dist_val
     if cache is None:
         cache = generate_cache(path_mapping, to_rep, attributes, num_cores, call_back, stop_check)
 
@@ -185,7 +157,7 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
 
     return asim
 
-def acoustic_similarity_directories(directory_one,directory_two, **kwargs):
+def acoustic_similarity_directories(directory_one, directory_two, **kwargs):
     """Computes acoustic similarity across two directories of .wav files.
 
     Parameters
@@ -459,6 +431,41 @@ def rep_worker(job_q,return_dict, counter,rep_func,attributes, stopped):
         rep._true_label = true_label
         return_dict[os.path.split(filename)[1]] = rep
 
+class RepWorker(Process):
+    def __init__(self, job_q, return_dict, rep_func, attributes, counter, stopped):
+        Process.__init__(self)
+        self.job_q = job_q
+        self.return_dict = return_dict
+        self.function = rep_func
+        self.attributes = attributes
+        self.counter = counter
+        self.stopped = stopped
+
+    def run(self):
+        while True:
+            self.counter.increment()
+            try:
+                filename = self.job_q.get(timeout=1)
+            except Empty:
+                break
+            self.job_q.task_done()
+            if self.stopped.stop_check():
+                continue
+            path, filelabel = os.path.split(filename)
+            att = OrderedDict()
+            att['filename'] = filelabel
+            try:
+                att.update(self.attributes[filelabel])
+            except (KeyError, TypeError):
+                pass
+            true_label = os.path.split(path)[1]
+            rep = self.function(filename,attributes=att)
+            rep._true_label = true_label
+            self.return_dict[os.path.split(filename)[1]] = rep
+
+        return
+
+
 def call_back_worker(call_back, counter, max_value, stop_check):
     call_back(0, max_value)
     while True:
@@ -485,20 +492,24 @@ def file_queue_adder(files,queue, stopped):
                 pass
 
 def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
+
     all_files = set()
     for pm in path_mapping:
         if stop_check is not None and stop_check():
             return
         all_files.update(pm)
-
-    job_queue = Queue()
+    all_files = sorted(all_files)
     stopped = Stopped()
-
-    job_p = Process(target=file_queue_adder,
-                    args = (list(all_files),job_queue, stopped))
-    job_p.start()
-    time.sleep(2)
-
+    job_queue = JoinableQueue(100)
+    file_ind = 0
+    while True:
+        if file_ind == len(all_files):
+            break
+        try:
+            job_queue.put(all_files[file_ind],False)
+        except Full:
+            break
+        file_ind += 1
     manager = Manager()
     return_dict = manager.dict()
     procs = []
@@ -510,10 +521,8 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
     #                args = (call_back, counter, len(all_files), stop_check))
     #    procs.append(cb)
     for i in range(num_procs):
-        p = Process(
-                target=rep_worker,
-                args=(job_queue,
-                      return_dict, counter,rep_func,attributes, stopped))
+        p = RepWorker(job_queue,
+                      return_dict,rep_func,attributes, counter, stopped)
         procs.append(p)
         p.start()
     time.sleep(2)
@@ -521,16 +530,22 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
         call_back('Generating representations...')
         prev = 0
     val = 0
-    while val < len(all_files) - 5:
+    while True:
+        if file_ind == len(all_files):
+            break
         if stop_check is not None and stop_check():
             stopped.stop()
+            time.sleep(1)
             break
-        time.sleep(5)
-        val = counter.value()
+        job_queue.put(all_files[file_ind])
+
         if call_back is not None:
-            if prev != val:
-                call_back(val)
-                prev = int(val)
+            value = counter.value()
+            call_back(value)
+        file_ind += 1
+    job_queue.join()
+    time.sleep(2)
+
     for p in procs:
         p.join()
 
