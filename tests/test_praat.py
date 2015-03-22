@@ -14,55 +14,23 @@ filenames = [os.path.splitext(x)[0] for x in os.listdir(TEST_DIR) if x.endswith(
 
 praatpath = 'praatcon.exe'
 
-class PraatFormantsTest(unittest.TestCase):
-    def setUp(self):
-        self.num_formants = 5
-        self.max_freq = 5500
-        self.win_len = 0.025
-        self.time_step = 0.01
+@pytest.mark.xfail
+def test_lpc(praatpath, base_filenames):
+    for f in base_filenames:
+        wavpath = f + '.wav'
+        formants = to_formants_praat(praatpath, wavpath, time_step = 0.01,
+                                win_len = 0.025, num_formants =5, max_freq = 5500)
 
-    @pytest.mark.xfail
-    def test_lpc(self):
-        for f in filenames:
-            wavpath = os.path.join(TEST_DIR,f+'.wav')
-            #print(f)
-            formants = to_formants_praat(praatpath,wavpath,self.time_step, self.win_len, self.num_formants,self.max_freq)
-            #print(formants.to_array())
-            #print(formants.to_array('bandwidth'))
-            raise(ValueError)
+@pytest.mark.xfail
+def test_ac(praatpath, base_filenames):
+    for f in base_filenames:
+        wavpath = f + '.wav'
+        pitch = to_pitch_praat(praatpath,wavpath, time_step = 0.01,
+                freq_lims = (75,600))
 
-class PraatPitchTest(unittest.TestCase):
-    def setUp(self):
-        self.max_freq = 600
-        self.min_freq = 75
-        self.time_step = 0.01
+@pytest.mark.xfail
+def test_intensity(praatpath, base_filenames):
+    for f in base_filenames:
+        wavpath = f + '.wav'
+        intensity = to_intensity_praat(praatpath,wavpath,time_step = 0.01)
 
-    @pytest.mark.xfail
-    def test_ac(self):
-        for f in filenames:
-            wavpath = os.path.join(TEST_DIR,f+'.wav')
-            print(f)
-            pitch = to_pitch_praat(praatpath,wavpath,self.time_step,(self.min_freq,self.max_freq))
-           # print(pitch.rep)
-            #print(sorted(pitch._rep.keys()))
-            #print(pitch[0.3])
-            #print(pitch.is_voiced(0.105))
-            #print(pitch[0.105])
-            #print(pitch.to_array())
-            #raise(ValueError)
-
-class PraatIntensityTest(unittest.TestCase):
-    def setUp(self):
-        self.time_step = 0.01
-
-    @pytest.mark.xfail
-    def test_intensity(self):
-        for f in filenames:
-            #print(f)
-            wavpath = os.path.join(TEST_DIR,f+'.wav')
-            intensity = to_intensity_praat(praatpath,wavpath,self.time_step)
-            #print(intensity.to_array())
-
-
-if __name__ == '__main__':
-    unittest.main()

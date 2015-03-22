@@ -7,6 +7,8 @@ from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc
 from acousticsim.representations.specgram import to_powerspec
 
+from acousticsim.exceptions import AcousticSimError
+
 from scipy.fftpack import dct
 
 def freqToMel(freq):
@@ -79,7 +81,7 @@ class Mfcc(Representation):
         self._num_filters = num_filters
         self._use_power = use_power
         self._deltas = deltas
-        self.process()
+        self.process(suppress_error = True)
 
     def filter_bank(self,nfft):
         """Construct a mel-frequency filter bank.
@@ -127,7 +129,7 @@ class Mfcc(Representation):
         #fbank = fbank / max(sum(fbank,axis=1))
         return fbank.transpose()
 
-    def process(self,debug = True):
+    def process(self,debug = True, signal = None, suppress_error = False):
         """Generate MFCCs in the style of HTK from a full path to a .wav file.
 
         Parameters
@@ -155,7 +157,14 @@ class Mfcc(Representation):
             the second dimension is the MFCC values.
 
         """
-        self._sr, proc = preproc(self._filepath,alpha=0.97)
+        if signal is None:
+            if self._filepath is None:
+                if suppress_error:
+                    return
+                raise(AcousticSimError('Must specify a either a filepath for the Mfcc object or a signal to process.'))
+            self._sr, proc = preproc(self._filepath,alpha=0.97)
+        else:
+            self._sr, proc = signal
         self._duration = len(proc) / self._sr
 
         L = 22
