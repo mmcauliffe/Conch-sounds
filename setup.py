@@ -4,6 +4,8 @@ from setuptools.command.test import test as TestCommand
 
 import acousticsim
 
+import multiprocessing
+
 def readme():
     with open('README.md') as f:
         return f.read()
