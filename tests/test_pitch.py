@@ -33,8 +33,9 @@ class ACTest(unittest.TestCase):
         self.freq_lims = (75,600)
 
     def test_ac(self):
-        return
         for f in filenames:
+            if f.startswith('silence'):
+                continue
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
             pitch = Pitch(wavpath,self.time_step, self.freq_lims)
@@ -48,14 +49,14 @@ class HarmTest(unittest.TestCase):
         self.min_pitch = 75
 
     def test_ac(self):
-        return
         for f in filenames:
+            if f.startswith('silence'):
+                continue
             wavpath = os.path.join(TEST_DIR,f+'.wav')
             print(f)
             harms = Harmonicity(wavpath,self.time_step, self.min_pitch)
             harms.process()
             print(harms.to_array())
-            raise(ValueError)
 
 if __name__ == '__main__':
     unittest.main()

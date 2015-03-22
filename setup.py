@@ -4,6 +4,8 @@ from setuptools.command.test import test as TestCommand
 
 import acousticsim
 
+import multiprocessing
+
 def readme():
     with open('README.md') as f:
         return f.read()
@@ -16,9 +18,10 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        import pytest
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
+        if __name__ == '__main__': #Fix for multiprocessing infinite recursion on Windows
+            import pytest
+            errcode = pytest.main(self.test_args)
+            sys.exit(errcode)
 
 setup(name='acousticsim',
       version=acousticsim.__version__,

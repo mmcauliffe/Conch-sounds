@@ -1,8 +1,9 @@
 from numpy import zeros, arange,argmin,min,abs, log2, ceil,floor, \
-                        shape, float,mean,sqrt,log10,linspace,array
-from numpy.fft import fft, ifft
+                        shape, float,mean,sqrt,log10,linspace,array,pad
+from numpy.fft import fft, ifft, rfft, irfft
 from scipy.io import wavfile
-from scipy.signal import lfilter,resample
+from scipy.signal import lfilter#,resample, decimate
+from scipy.interpolate import interp1d, InterpolatedUnivariateSpline
 
 def nextpow2(x):
     """Return the first integer N such that 2**N >= abs(x)"""
@@ -17,6 +18,61 @@ def extract_wav(path,outpath,begin_time,end_time):
 
     newsig = sig[begin:end]
     wavfile.write(outpath,sr,newsig)
+
+def resample(proc, factor, precision = 1):
+    if factor == 1:
+        return proc
+    num_samples = proc.shape[0]
+    x = arange(0,num_samples)
+    new_num_samples = int(num_samples * factor)
+
+    newx = arange(0,num_samples, 1/factor)
+    resampled = zeros(proc.shape)
+    if factor < 1:
+        try:
+            num_channels = proc.shape[1]
+        except IndexError:
+            num_channels = 1
+        for ic in range(num_channels):
+            try:
+                temp = proc[:,ic]
+            except IndexError:
+                temp = proc[:]
+            #filter
+            nfft = 1
+            anti_aliasing_padding = 1000
+            print(temp.shape)
+            pad(temp,anti_aliasing_padding, mode = 'constant', constant_values=0)
+            print(temp.shape)
+            while nfft < num_samples + anti_aliasing_padding * 2:
+                nfft *= 2;
+            F = rfft(temp,nfft)
+            print(F.shape)
+            print(nfft)
+            print(nfft/2)
+            for i in range(int(factor * (nfft/2)),int(nfft/2)):
+                F[i] = 0
+            temp = irfft(F,nfft)
+            temp = temp[anti_aliasing_padding:anti_aliasing_padding+ num_samples]
+            #interpolate
+            if precision == 0:
+                f = interp1d(x,temp, kind = 'nearest')
+            elif precision <= 3:
+                print(x.shape)
+                print(temp.shape)
+                f = InterpolatedUnivariateSpline(x,temp, k = precision)
+            else:
+                raise(NotImplementedError)
+            try:
+                resampled[:,ic] = f(newx)
+            except IndexError:
+                resampled[:] = f(newx)
+    elif factor > 1:
+        raise(NotImplementedError)
+    return resampled
+
+def sinc_interp1d(x,y, order):
+    pass
 
 def preproc(path,sr=16000,alpha=0.95):
     """Preprocess a .wav file for later processing.  Currently assumes a
@@ -49,7 +105,7 @@ def preproc(path,sr=16000,alpha=0.95):
 
     if False and sr != oldsr:
         t = len(sig)/oldsr
-        numsamp = t * sr
+        numsamp = int(t * sr)
         proc = resample(sig,numsamp)
     else:
         proc = sig

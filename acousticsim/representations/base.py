@@ -106,13 +106,12 @@ class Representation(object):
             return self._duration
         return sorted(self._rep.keys())[index]
 
-    def segment(self,thresh):
+    def segment(self,threshold = 0.1):
         if not self._is_windowed:
             return False
-        segments, means = to_segments(self.to_array(), threshold = thresh,return_means=True)
+        segments, means = to_segments(self.to_array(), threshold = threshold,return_means=True)
         begin = 0
         self._segments = dict()
-        print(segments)
         for i,end_frame in enumerate(segments):
             end_time = self.time_from_index(end_frame)
             self._segments[begin, end_time] = means[i]
@@ -172,6 +171,10 @@ class Representation(object):
     @property
     def times(self):
         return sorted(self._rep.keys())
+
+    @property
+    def vowel_durations(self):
+        return [x[1] - x[0] for x in sorted(self._vowels.keys())]
 
     @property
     def shape(self):

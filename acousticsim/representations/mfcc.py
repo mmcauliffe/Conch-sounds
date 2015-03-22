@@ -7,6 +7,8 @@ from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc
 from acousticsim.representations.specgram import to_powerspec
 
+from acousticsim.exceptions import AcousticSimError
+
 from scipy.fftpack import dct
 
 def freqToMel(freq):
@@ -70,7 +72,7 @@ class Mfcc(Representation):
     _is_windowed = True
     def __init__(self, filepath, freq_lims, num_coeffs, win_len,
                         time_step, num_filters = 26, use_power = False,
-                        attributes=None):
+                        attributes=None, deltas = False):
         Representation.__init__(self,filepath, freq_lims, attributes)
         self._num_coeffs = num_coeffs
         self._ranges = [None] * self._num_coeffs
@@ -78,8 +80,8 @@ class Mfcc(Representation):
         self._time_step = time_step
         self._num_filters = num_filters
         self._use_power = use_power
-
-        self.process()
+        self._deltas = deltas
+        self.process(suppress_error = True)
 
     def filter_bank(self,nfft):
         """Construct a mel-frequency filter bank.
@@ -127,7 +129,7 @@ class Mfcc(Representation):
         #fbank = fbank / max(sum(fbank,axis=1))
         return fbank.transpose()
 
-    def process(self,debug = True):
+    def process(self,debug = True, signal = None, suppress_error = False):
         """Generate MFCCs in the style of HTK from a full path to a .wav file.
 
         Parameters
@@ -155,7 +157,14 @@ class Mfcc(Representation):
             the second dimension is the MFCC values.
 
         """
-        self._sr, proc = preproc(self._filepath,alpha=0.97)
+        if signal is None:
+            if self._filepath is None:
+                if suppress_error:
+                    return
+                raise(AcousticSimError('Must specify a either a filepath for the Mfcc object or a signal to process.'))
+            self._sr, proc = preproc(self._filepath,alpha=0.97)
+        else:
+            self._sr, proc = signal
         self._duration = len(proc) / self._sr
 
         L = 22
@@ -179,6 +188,21 @@ class Mfcc(Representation):
             if not self._use_power:
                 dctSpectrum = dctSpectrum[1:]
             self._rep[k] = dctSpectrum[:self._num_coeffs]
+        if self._deltas:
+            keys = sorted(self._rep.keys())
+            for i,k in enumerate(keys):
+                if i == 0 or i == len(self._rep.keys()) - 1:
+                    self._rep[k] = array(list(self._rep[k]) + [0 for x in range(self._num_coeffs)])
+                else:
+                    deltas = self._rep[keys[i+1]][:self._num_coeffs] - self._rep[keys[i-1]][:self._num_coeffs]
+                    self._rep[k] = array(list(self._rep[k]) + list(deltas))
+            for i,k in enumerate(keys):
+                if i == 0 or i == len(self._rep.keys()) - 1:
+                    self._rep[k] = array(list(self._rep[k]) + [0 for x in range(self._num_coeffs)])
+                else:
+                    deltas = self._rep[keys[i+1]][self._num_coeffs:self._num_coeffs*2] - self._rep[keys[i-1]][self._num_coeffs:self._num_coeffs*2]
+                    self._rep[k] = array(list(self._rep[k]) + list(deltas))
+
         if debug:
             return pspec,aspec
 

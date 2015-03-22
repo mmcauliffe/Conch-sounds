@@ -4,6 +4,7 @@ from numpy import array,sum,sqrt
 from numpy.linalg import norm
 import unittest
 import os
+import pytest
 
 from acousticsim.representations.amplitude_envelopes import Envelopes
 
@@ -34,8 +35,8 @@ class EnvelopeTest(unittest.TestCase):
             [1.0000 ,-2.6224  , 2.8816 , -1.5936  ,  0.3927],
             [1.0000  , 1.1957 , -0.1477 ,  -0.1166  ,  0.2388],]
 
+    @pytest.mark.xfail
     def test_envelope_gen(self):
-        return
         for f in filenames:
             print(f)
             wavpath = os.path.join(TEST_DIR,f+'.wav')
