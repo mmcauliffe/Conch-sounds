@@ -160,6 +160,17 @@ class SpeechClassifierLandmarks(object):
                 break
 
 class SpeechClassifier(object):
+    """
+    Classify a wav file into speech components. Currently doesn't have
+    high accuracy
+
+    Parameters
+    ----------
+    parameters : str
+        Parameters to use for the classifier, can be 'timit', 'buckeye'
+        or 'new'
+
+    """
     _num_coeffs = 3
     _use_priors = True
     win_len = 0.025

@@ -11,7 +11,7 @@ from acousticsim.exceptions import AcousticSimError
 
 from scipy.fftpack import dct
 
-def freqToMel(freq):
+def freq_to_mel(freq):
     """Convert a value in Hertz to a value in mel.
 
     Parameters
@@ -28,7 +28,7 @@ def freqToMel(freq):
 
     return 2595 * log10(1+freq/700.0)
 
-def melToFreq(mel):
+def mel_to_freq(mel):
     """Convert a value in mel to a value in Hertz.
 
     Parameters
@@ -46,7 +46,7 @@ def melToFreq(mel):
     return 700*(10**(mel/2595.0)-1)
 
 
-def dct_spectrum(spec):
+def _dct_spectrum(spec):
     """Convert a spectrum into a cepstrum via type-III DCT (following HTK).
 
     Parameters
@@ -69,6 +69,36 @@ def dct_spectrum(spec):
     return cep
 
 class Mfcc(Representation):
+    """
+    Mel frequency cepstrum coefficient representation of a sound.
+
+    Parameters
+    ----------
+    filepath : str
+        Filepath of wav file to process
+
+    freq_lims : tuple of int
+        Minimum and maximum frequencies in Hertz
+
+    num_coeffs : int
+        Number of cepstrum coefficients
+
+    win_len : float
+        Window length in seconds
+
+    time_step : float
+        Time step between successive frames
+
+    num_filters : int, defaults to 26
+        Number of triangular filters in the filterbank
+
+    use_power : bool, defaults to True
+        Flag for keeping first cepstrum coefficient, which corresponds
+        to the power in the frame
+
+    deltas : bool, defaults to False
+        Flag to calculate the delta coefficients
+    """
     _is_windowed = True
     def __init__(self, filepath, freq_lims, num_coeffs, win_len,
                         time_step, num_filters = 26, use_power = False,
@@ -83,21 +113,13 @@ class Mfcc(Representation):
         self._deltas = deltas
         self.process(suppress_error = True)
 
-    def filter_bank(self,nfft):
-        """Construct a mel-frequency filter bank.
+    def _filter_bank(self,nfft):
+        """Constructs a mel-frequency filter bank.
 
         Parameters
         ----------
         nfft : int
             Number of points in the FFT.
-        nfilt : int
-            Number of mel filters.
-        minFreq : int
-            Minimum frequency in Hertz.
-        maxFreq : int
-            Maximum frequency in Hertz.
-        sr : int
-            Sampling rate of the sampled waveform.
 
         Returns
         -------
@@ -111,10 +133,10 @@ class Mfcc(Representation):
 
         sr = self._sr
 
-        minMel = freqToMel(self._freq_lims[0])
-        maxMel = freqToMel(self._freq_lims[1])
+        minMel = freq_to_mel(self._freq_lims[0])
+        maxMel = freq_to_mel(self._freq_lims[1])
         melPoints = linspace(minMel,maxMel,nfilt+2)
-        binfreqs = melToFreq(melPoints)
+        binfreqs = mel_to_req(melPoints)
         bins = round((nfft-1)*binfreqs/sr)
 
         fftfreqs = arange(int(nfft/2+1))/nfft * sr
@@ -130,32 +152,13 @@ class Mfcc(Representation):
         return fbank.transpose()
 
     def process(self,debug = True, signal = None, suppress_error = False):
-        """Generate MFCCs in the style of HTK from a full path to a .wav file.
+        """
+        Generate MFCCs in the style of HTK from a full path to a .wav file.
 
         Parameters
         ----------
-        filename : str
-            Full path to .wav file to process.
-        freq_lims : tuple
-            Minimum and maximum frequencies in Hertz to use.
-        num_coeffs : int
-            Number of coefficients of the cepstrum to return.
-        win_len : float
-            Window length in seconds to use for FFT.
-        time_step : float
-            Time step in seconds for windowing.
-        num_filters : int
-            Number of mel filters to use in the filter bank, defaults to 26.
-        use_power : bool
-            If true, use the first coefficient of the cepstrum, which is power
-            based.  Defaults to false.
-
-        Returns
-        -------
-        2D array
-            MFCCs for each frame.  The first dimension is the time in frames,
-            the second dimension is the MFCC values.
-
+        debug : bool
+            Print debug messages
         """
         if signal is None:
             if self._filepath is None:
@@ -174,20 +177,20 @@ class Mfcc(Representation):
 
         pspec = to_powerspec(proc,self._sr,self._win_len,self._time_step)
 
-        filterbank = self.filter_bank((len(next(iter(pspec.values())))-1) * 2)
+        filterbank = self._filter_bank((len(next(iter(pspec.values())))-1) * 2)
 
-        #self._rep = zeros((num_frames,self._num_coeffs))
         self._rep = dict()
-        #aspec = zeros((num_frames,self._num_filters))
         aspec = dict()
         for k in pspec:
             filteredSpectrum = dot(sqrt(pspec[k]), filterbank)**2
             aspec[k] = filteredSpectrum
-            dctSpectrum = dct_spectrum(filteredSpectrum)
+            dctSpectrum = _dct_spectrum(filteredSpectrum)
             dctSpectrum = dot(dctSpectrum , lift)
             if not self._use_power:
                 dctSpectrum = dctSpectrum[1:]
             self._rep[k] = dctSpectrum[:self._num_coeffs]
+
+        #Calculate deltas
         if self._deltas:
             keys = sorted(self._rep.keys())
             for i,k in enumerate(keys):
@@ -207,6 +210,15 @@ class Mfcc(Representation):
             return pspec,aspec
 
     def norm_amp(self,new_ranges):
+        """
+        Normalize the ranges of coefficients to a set of ranges.
+
+        Parameters
+        ----------
+        new_ranges : list of tuple
+            New ranges for each coefficient to normalize to
+
+        """
         #if not self._use_power:
         #    return
         for i,r in enumerate(new_ranges):
