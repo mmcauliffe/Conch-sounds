@@ -525,7 +525,6 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
                       return_dict,rep_func,attributes, counter, stopped)
         procs.append(p)
         p.start()
-    time.sleep(2)
     if call_back is not None:
         call_back('Generating representations...')
         prev = 0
@@ -544,7 +543,6 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
             call_back(value)
         file_ind += 1
     job_queue.join()
-    time.sleep(2)
 
     for p in procs:
         p.join()

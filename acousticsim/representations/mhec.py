@@ -3,7 +3,7 @@ from numpy import zeros
 from acousticsim.representations.base import Representation
 from acousticsim.representations.gammatone import to_gammatone
 from acousticsim.representations.amplitude_envelopes import window_envelopes
-from acousticsim.representations.mfcc import dct_spectrum
+from acousticsim.representations.mfcc import _dct_spectrum
 
 
 def to_mhec(path, freq_lims,num_coeffs, num_filters, window_length,time_step, use_power = False):
@@ -14,7 +14,7 @@ def to_mhec(path, freq_lims,num_coeffs, num_filters, window_length,time_step, us
     num_frames = S.shape[0]
     mhecs = zeros((num_frames,num_coeffs))
     for k in range(num_frames):
-        dctSpectrum = dct_spectrum(S[k,:])
+        dctSpectrum = _dct_spectrum(S[k,:])
 
         if not use_power:
             dctSpectrum = dctSpectrum[1:]
