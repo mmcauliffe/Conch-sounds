@@ -1,18 +1,9 @@
 
-import unittest
 import pytest
-import os
-import sys
 
 from acousticsim.praat import to_formants_praat, to_pitch_praat, to_intensity_praat
 
 from numpy.testing import assert_array_almost_equal
-
-TEST_DIR = os.path.abspath('tests/data')
-
-filenames = [os.path.splitext(x)[0] for x in os.listdir(TEST_DIR) if x.endswith('.wav')]
-
-praatpath = 'praatcon.exe'
 
 @pytest.mark.xfail
 def test_lpc(praatpath, base_filenames):
