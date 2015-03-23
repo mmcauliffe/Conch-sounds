@@ -2,9 +2,9 @@ import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
-import acousticsim
-
 import multiprocessing
+
+import acousticsim
 
 def readme():
     with open('README.md') as f:

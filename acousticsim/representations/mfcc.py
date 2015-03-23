@@ -136,7 +136,7 @@ class Mfcc(Representation):
         minMel = freq_to_mel(self._freq_lims[0])
         maxMel = freq_to_mel(self._freq_lims[1])
         melPoints = linspace(minMel,maxMel,nfilt+2)
-        binfreqs = mel_to_req(melPoints)
+        binfreqs = mel_to_freq(melPoints)
         bins = round((nfft-1)*binfreqs/sr)
 
         fftfreqs = arange(int(nfft/2+1))/nfft * sr
