@@ -18,3 +18,6 @@ class NoWavError(AcousticSimError):
         self.details = 'The following files were found in {}:\n\n'.format(directory)
         for f in files:
             self.details += '{}\n'.format(f)
+
+class MfccError(AcousticSimError):
+    pass

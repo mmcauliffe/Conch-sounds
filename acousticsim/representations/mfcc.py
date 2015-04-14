@@ -7,6 +7,8 @@ from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc
 from acousticsim.representations.specgram import to_powerspec
 
+from acousticsim.exceptions import MfccError
+
 from acousticsim.exceptions import AcousticSimError
 
 from scipy.fftpack import dct
@@ -177,7 +179,11 @@ class Mfcc(Representation):
 
         pspec = to_powerspec(proc,self._sr,self._win_len,self._time_step)
 
-        filterbank = self._filter_bank((len(next(iter(pspec.values())))-1) * 2)
+        try:
+            nfft = (len(next(iter(pspec.values())))-1) * 2
+        except StopIteration:
+            raise(MfccError('The file "{}" is too short to process (duration: {}; window size: {}).'.format(self._filepath, self._duration,self._win_len)))
+        filterbank = self._filter_bank(nfft)
 
         self._rep = dict()
         aspec = dict()

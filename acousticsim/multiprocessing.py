@@ -68,9 +68,13 @@ class RepWorker(Process):
             except (KeyError, TypeError):
                 pass
             true_label = os.path.split(path)[1]
-            rep = self.function(filename,attributes=att)
-            rep._true_label = true_label
-            self.return_dict[os.path.split(filename)[1]] = rep
+            try:
+                rep = self.function(filename,attributes=att)
+                rep._true_label = true_label
+                self.return_dict[os.path.split(filename)[1]] = rep
+            except Exception as e:
+                self.stopped.stop()
+                self.return_dict['error'] = e
 
         return
 
@@ -106,21 +110,26 @@ class DistWorker(Process):
                     shadow = self.cache[filetup[2]]
             except KeyError:
                 continue
-            dist1 = self.function(base,model)
-            if self.axb:
-                dist2 = self.function(shadow,model)
-                try:
-                    ratio = dist2 / dist1
-                except ZeroDivisionError:
-                    ratio = -1
-            else:
-                ratio = dist1
-            if self.output_sim:
-                try:
-                    ratio = 1/ratio
-                except ZeroDivisionError:
-                    ratio = 1
-            self.return_dict[filetup] = ratio
+            try:
+                dist1 = self.function(base,model)
+                if self.axb:
+                    dist2 = self.function(shadow,model)
+                    try:
+                        ratio = dist2 / dist1
+                    except ZeroDivisionError:
+                        ratio = -1
+                else:
+                    ratio = dist1
+                if self.output_sim:
+                    try:
+                        ratio = 1/ratio
+                    except ZeroDivisionError:
+                        ratio = 1
+                self.return_dict[filetup] = ratio
+            except Exception as e:
+                self.stopped.stop()
+                self.return_dict['error'] = e
+                
         return
 
 def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
@@ -172,7 +181,8 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
 
     for p in procs:
         p.join()
-
+    if 'error' in return_dict:
+        raise(return_dict['error'])
     return return_dict
 
 def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, stop_check):
@@ -226,5 +236,7 @@ def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, st
 
     for p in procs:
         p.join()
+    if 'error' in return_dict:
+        raise(return_dict['error'])
     return return_dict
 
