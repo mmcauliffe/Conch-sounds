@@ -11,6 +11,8 @@ notifications:
 
 # Setup anaconda
 before_install:
+  - wget http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz
+
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
@@ -19,6 +21,10 @@ before_install:
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
+  - sudo mkdir -p /downloads
+  - sudo chmod a+rw /downloads
+  - if [ ! -f /downloads/praat.tar.gz ]; then curl -L -o /downloads/praat.tar.gz http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz; fi
+  - tar xzf /downloads/praat.tar.gz --keep-newer-files
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy scikit-learn networkx matplotlib nose pytest
@@ -33,3 +39,8 @@ script:
 # Calculate coverage
 after_success:
   - coveralls
+
+cache:
+  directories:
+    - /downloads
+  apt: true
