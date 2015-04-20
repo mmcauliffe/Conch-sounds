@@ -22,7 +22,7 @@ before_install:
   - sudo mkdir -p /downloads
   - sudo chmod a+rw /downloads
   - if [ ! -f /downloads/praat.tar.gz ]; then curl -L -o /downloads/praat.tar.gz http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz; fi
-  - tar xzf /downloads/praat.tar.gz --keep-newer-files
+  - tar xvf /downloads/praat.tar.gz --keep-newer-files
   - pushd /downloads
   - pwd
   - ls
