@@ -11,8 +11,6 @@ notifications:
 
 # Setup anaconda
 before_install:
-  - wget http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz
-
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
@@ -23,9 +21,12 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
   - sudo mkdir -p /downloads
   - sudo chmod a+rw /downloads
-  - sudo apt-get install praat
-  #- if [ ! -f /downloads/praat.tar.gz ]; then curl -L -o /downloads/praat.tar.gz http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz; fi
-  #- tar xzf /downloads/praat.tar.gz --keep-newer-files
+  - if [ ! -f /downloads/praat.tar.gz ]; then curl -L -o /downloads/praat.tar.gz http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz; fi
+  - tar xzf /downloads/praat.tar.gz --keep-newer-files
+  - pushd /downloads
+  - pwd
+  - ls
+  - popd
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy scikit-learn networkx matplotlib nose pytest
