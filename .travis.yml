@@ -23,8 +23,9 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
   - sudo mkdir -p /downloads
   - sudo chmod a+rw /downloads
-  - if [ ! -f /downloads/praat.tar.gz ]; then curl -L -o /downloads/praat.tar.gz http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz; fi
-  - tar xzf /downloads/praat.tar.gz --keep-newer-files
+  - sudo apt-get install praat
+  #- if [ ! -f /downloads/praat.tar.gz ]; then curl -L -o /downloads/praat.tar.gz http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz; fi
+  #- tar xzf /downloads/praat.tar.gz --keep-newer-files
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy scikit-learn networkx matplotlib nose pytest
