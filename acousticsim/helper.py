@@ -15,6 +15,8 @@ from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 from acousticsim.exceptions import AcousticSimError,NoWavError
 from acousticsim.multiprocessing import generate_cache, calc_asim
 
+from acousticsim.praat.textgrid import TextGrid
+
 def _build_to_rep(**kwargs):
     rep = kwargs.get('rep', 'mfcc')
 
@@ -98,3 +100,17 @@ def load_attributes(path):
                     linedict[k] = line[k]
             outdict[name] = linedict
     return outdict
+
+def get_vowel_points(textgrid_path, tier_name = 'Vowel', vowel_label = 'V'):
+    tg = TextGrid()
+    tg.read(textgrid_path)
+    vowel_tier = tg.getFirst(tier_name)
+    for i in vowel_tier:
+        if i.mark == vowel_label:
+            begin = i.minTime
+            end = i.maxTime
+            break
+    else:
+        raise(AcousticSimError('No vowel label was found in \'{}\'.'.format(textgrid_path)))
+    return begin, end
+

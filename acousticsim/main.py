@@ -42,13 +42,10 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
     freq_lims : tuple, optional
         A tuple of the minimum frequency and maximum frequency in Hertz to use
         for computing representations.  Defaults to (80, 7800) following
-        Lewandowski's dissertation (2012).
+        Lewandowski (2012).
     output_sim : bool, optional
         If true (default), the function will return similarities (inverse distance).
         If false, distance measures will be returned instead.
-    verbose : bool, optional
-        If true, command line progress will be displayed after every 50
-        mappings have been processed.  Defaults to false.
 
     Returns
     -------
@@ -61,7 +58,11 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
 
     stop_check = kwargs.get('stop_check',None)
     call_back = kwargs.get('call_back',None)
-    to_rep = _build_to_rep(**kwargs)
+    rep = kwargs.get('rep','mfcc')
+    if callable(rep):
+        to_rep = rep
+    else:
+        to_rep = _build_to_rep(**kwargs)
 
     if kwargs.get('use_multi',False):
         num_cores = kwargs.get('num_cores', 1)
@@ -73,12 +74,15 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
 
     match_function = kwargs.get('match_function', 'dtw')
     cache = kwargs.get('cache',None)
-    if match_function == 'xcorr':
-        dist_func = xcorr_distance
-    elif match_function == 'dct':
-        dist_func = dct_distance
-    else:
-        dist_func = dtw_distance
+    if isinstance(match_function, str):
+        if match_function == 'xcorr':
+            dist_func = xcorr_distance
+        elif match_function == 'dct':
+            dist_func = dct_distance
+        else:
+            dist_func = dtw_distance
+    elif callable(match_function):
+        dist_func = match_function
 
     attributes = kwargs.get('attributes',dict())
     if cache is None:
@@ -124,7 +128,7 @@ def acoustic_similarity_directories(directory_one, directory_two, **kwargs):
     freq_lims : tuple, optional
         A tuple of the minimum frequency and maximum frequency in Hertz to use
         for computing representations.  Defaults to (80, 7800) following
-        Lewandowski's dissertation (2012).
+        Lewandowski (2012).
     output_sim : bool, optional
         If true (default), the function will return similarities (inverse distance).
         If false, distance measures will be returned instead.
@@ -178,6 +182,40 @@ def acoustic_similarity_directories(directory_one, directory_two, **kwargs):
     return output_val
 
 def analyze_directories(directories, **kwargs):
+    """
+    Analyze many directories.
+
+    Parameters
+    ----------
+    directories : list of str
+        List of fully specified paths to the directories to be analyzed
+    rep : {'envelopes','mfcc'}, optional
+        The type of representation to convert the wav files into before
+        comparing for similarity.  Amplitude envelopes will be computed
+        when 'envelopes' is specified, and MFCCs will be computed when
+        'mfcc' is specified (default).
+    match_function : {'dtw', 'xcorr'}, optional
+        How similarity/distance will be calculated.  Defaults to 'dtw' to
+        use Dynamic Time Warping (can be slower) to compute distance.
+        Cross-correlation can be specified with 'xcorr', which computes
+        distance as the inverse of a maximum cross-correlation value
+        between 0 and 1.
+    num_filters : int, optional
+        The number of frequency filters to use when computing representations.
+        Defaults to 8 for amplitude envelopes and 26 for MFCCs.
+    num_coeffs : int, optional
+        The number of coefficients to use for MFCCs (not used for
+        amplitude envelopes).  Default is 20, which captures speaker-
+        specific information, whereas 12 would be more speaker-independent.
+    freq_lims : tuple, optional
+        A tuple of the minimum frequency and maximum frequency in Hertz to use
+        for computing representations.  Defaults to (80, 7800) following
+        Lewandowski's dissertation (2012).
+    output_sim : bool, optional
+        If true (default), the function will return similarities (inverse distance).
+        If false, distance measures will be returned instead.
+
+    """
     stop_check = kwargs.get('stop_check',None)
     call_back = kwargs.get('call_back',None)
 

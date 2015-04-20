@@ -5,11 +5,17 @@ import os
 from acousticsim.utils import concatenate_files
 from acousticsim.representations.base import Representation
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
+def do_long_tests():
+    if os.environ.get('TRAVIS'):
+        return True
+    return False
+
+@pytest.fixture(scope = 'module')
 def test_dir():
     return os.path.abspath('tests/data')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope = 'module')
 def soundfiles_dir(test_dir):
     return os.path.join(test_dir, 'soundfiles')
 
@@ -36,7 +42,9 @@ def base_filenames(soundfiles_dir):
 
 @pytest.fixture(scope='module')
 def praatpath():
-    return 'praatcon.exe'
+    if os.environ.get('TRAVIS'):
+        return ''
+    return r'C:\Users\michael\Documents\Praat\praatcon.exe'
 
 
 @pytest.fixture(scope='module')

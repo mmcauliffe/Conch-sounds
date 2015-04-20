@@ -104,7 +104,7 @@ class Mfcc(Representation):
     _is_windowed = True
     def __init__(self, filepath, freq_lims, num_coeffs, win_len,
                         time_step, num_filters = 26, use_power = False,
-                        attributes=None, deltas = False):
+                        attributes=None, deltas = False, process = True):
         Representation.__init__(self,filepath, freq_lims, attributes)
         self._num_coeffs = num_coeffs
         self._ranges = [None] * self._num_coeffs

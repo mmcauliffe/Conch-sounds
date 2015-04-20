@@ -204,6 +204,10 @@ class Formants(Representation):
 
         self._time_step = time_step
 
+    #def __getitem__(self,key):
+    #    item = Representation.__getitem__(self, key)
+    #    return [x[0] for x in item]
+
     def to_array(self, value='formant'):
         times = sorted(self._rep.keys())
         ex = next(iter(self._rep.values()))

@@ -18,24 +18,12 @@ def xcorr_distance(rep_one,rep_two):
     for i in range(1,num_bands):
         longerBand = longerRep[:,i]
         denom = sqrt(sum(longerBand**2))
-        if denom == 0:
-            print(rep_one_saved['filename'])
-            print(rep_one.shape)
-            print(rep_two_saved['filename'])
-            print(rep_two.shape)
-            print(shorterBand)
-            continue
-        longerBand = longerBand/denom
+        if denom != 0:
+            longerBand = longerBand/denom
         shorterBand = shorterRep[:,i]
         denom = sqrt(sum(shorterBand**2))
-        if denom == 0:
-            print(rep_one_saved['filename'])
-            print(rep_one.shape)
-            print(rep_two_saved['filename'])
-            print(rep_two.shape)
-            print(shorterBand)
-            continue
-        shorterBand = shorterBand/denom
+        if denom != 0:
+            shorterBand = shorterBand/denom
         temp = correlate(longerBand,shorterBand,mode='valid')
         matchSum += temp
     maxInd = argmax(matchSum)

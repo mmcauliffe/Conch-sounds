@@ -12,7 +12,7 @@ from acousticsim.representations import Envelopes, Mfcc
 
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
-from acousticsim.exceptions import AcousticSimError,NoWavError
+from acousticsim.exceptions import AcousticSimError,NoWavError, AcousticSimPythonError
 
 class Counter(object):
     def __init__(self, initval=0):
@@ -60,7 +60,10 @@ class RepWorker(Process):
             self.job_q.task_done()
             if self.stopped.stop_check():
                 continue
+            if not os.path.exists(filename):
+                continue
             path, filelabel = os.path.split(filename)
+
             att = OrderedDict()
             att['filename'] = filelabel
             try:
@@ -74,7 +77,7 @@ class RepWorker(Process):
                 self.return_dict[os.path.split(filename)[1]] = rep
             except Exception as e:
                 self.stopped.stop()
-                self.return_dict['error'] = e
+                self.return_dict['error'] = AcousticSimPythonError(e)
 
         return
 
@@ -92,8 +95,6 @@ class DistWorker(Process):
 
     def run(self):
         while True:
-            if self.stopped.stop_check():
-                break
             self.counter.increment()
             try:
                 pm = self.job_q.get(timeout=1)
@@ -128,8 +129,8 @@ class DistWorker(Process):
                 self.return_dict[filetup] = ratio
             except Exception as e:
                 self.stopped.stop()
-                self.return_dict['error'] = e
-                
+                self.return_dict['error'] = AcousticSimPythonError(e)
+
         return
 
 def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):

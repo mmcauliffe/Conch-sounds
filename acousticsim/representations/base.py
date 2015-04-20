@@ -13,7 +13,7 @@ class Representation(object):
     _segments = None
     _is_windowed = False
 
-    def __init__(self,filepath, freq_lims, attributes):
+    def __init__(self, filepath, freq_lims, attributes):
         self._vowels = dict()
         self._transcription = list()
         self._rep = dict()
@@ -22,6 +22,7 @@ class Representation(object):
         self._filepath = filepath
         self._freq_lims = freq_lims
         self._attributes = attributes
+
 
     def __getitem__(self,key):
         if isinstance(key,str):

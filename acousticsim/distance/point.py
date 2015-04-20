@@ -2,6 +2,20 @@
 from scipy.spatial.distance import euclidean
 import numpy as np
 
+def point_distance(rep_one, rep_two, point_one, point_two):
+    one_val = rep_one[point_one]
+    if one_val is None:
+        one_val = 0.0
+    if not isinstance(one_val,float) and isinstance(one_val[0],tuple):
+        one_val = [x[0] for x in one_val]
+    two_val = rep_two[point_two]
+    if two_val is None:
+        two_val = 0.0
+    if not isinstance(one_val,float) and isinstance(one_val[0],tuple):
+        two_val = [x[0] for x in two_val]
+    dist = euclidean(np.array(one_val), np.array(two_val))
+    return dist
+
 def vowel_midpoint_distance(rep_one, rep_two):
     if len(rep_one.vowel_times.keys()) != 1 or len(rep_two.vowel_times.keys()) != 1:
         print(rep_one['filename'])

@@ -46,6 +46,7 @@ setup(name='acousticsim',
                 'acousticsim.praat',
                 'acousticsim.tuning',
                 'acousticsim.clustering'],
+      package_data={'acousticsim.praat': ['*.praat']},
       install_requires=[
             'numpy',
             'scipy',
