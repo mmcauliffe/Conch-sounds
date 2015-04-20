@@ -11,7 +11,7 @@ def point_distance(rep_one, rep_two, point_one, point_two):
     two_val = rep_two[point_two]
     if two_val is None:
         two_val = 0.0
-    if not isinstance(one_val,float) and isinstance(one_val[0],tuple):
+    if not isinstance(two_val,float) and isinstance(two_val[0],tuple):
         two_val = [x[0] for x in two_val]
     dist = euclidean(np.array(one_val), np.array(two_val))
     return dist
