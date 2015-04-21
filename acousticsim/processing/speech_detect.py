@@ -452,7 +452,10 @@ class SpeechClassifier(object):
             ind = i * 2
             mean = self._guass_values[category][ind]
             var = self._guass_values[category][ind+1]**2
-            prob = np.exp(-1*(feature_values[i]-mean)**2/(2*var))/(np.sqrt(np.pi*var))
+            val = feature_values[i]
+            if isinstance(val, list):
+                val = val[0]
+            prob = np.exp(-1*(val-mean)**2/(2*var))/(np.sqrt(np.pi*var))
             val *= prob
         return val
 
