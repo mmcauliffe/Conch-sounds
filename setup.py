@@ -44,7 +44,6 @@ setup(name='acousticsim',
                 'acousticsim.representations',
                 'acousticsim.processing',
                 'acousticsim.praat',
-                'acousticsim.tuning',
                 'acousticsim.clustering'],
       package_data={'acousticsim.praat': ['*.praat']},
       install_requires=[

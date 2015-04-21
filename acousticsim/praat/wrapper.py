@@ -17,7 +17,7 @@ def to_pitch_praat(praatpath, filename, time_step = 0.01, freq_lims = (75, 600),
     output = Pitch(filename, time_step, freq_lims, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
-        r[k] = v['Pitch']
+        r[k] = [v['Pitch']]
     output.rep = r
     return output
 
@@ -46,7 +46,7 @@ def to_intensity_praat(praatpath, filename, time_step = 0.01, attributes = None)
     output = Intensity(filename, time_step, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
-        r[k] = v['Intensity']
+        r[k] = [v['Intensity']]
     output.rep = r
     return output
 

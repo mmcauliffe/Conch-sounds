@@ -1,11 +1,13 @@
+import numpy as np
 from numpy import log, sqrt, sum, correlate,argmax
 #from scipy.signal import correlate,correlate2d,fftconvolve
 
 def xcorr_distance(rep_one,rep_two):
-    rep_one_saved = rep_one
-    rep_two_saved = rep_two
-    rep_one = rep_one.to_array()
-    rep_two = rep_two.to_array()
+    if not isinstance(rep_one, np.ndarray):
+        rep_one = rep_one.to_array()
+    if not isinstance(rep_two, np.ndarray):
+        rep_two = rep_two.to_array()
+    assert(rep_one.shape[1] == rep_two.shape[1])
     length_diff = rep_one.shape[0] - rep_two.shape[0]
     if length_diff > 0:
         longerRep = rep_one
@@ -14,8 +16,8 @@ def xcorr_distance(rep_one,rep_two):
         longerRep = rep_two
         shorterRep = rep_one
     num_bands = longerRep.shape[1]
-    matchSum = correlate(longerRep[:,0]/sqrt(sum(longerRep[:,0]**2)),shorterRep[:,0]/sqrt(sum(shorterRep[:,0]**2)),mode='valid')
-    for i in range(1,num_bands):
+    matchSum = 0
+    for i in range(num_bands):
         longerBand = longerRep[:,i]
         denom = sqrt(sum(longerBand**2))
         if denom != 0:

@@ -51,14 +51,14 @@ def praatpath():
 def reps_for_distance():
     source = Representation(None,None,None)
     source.rep = {1:[2,3,4],
-                        2:[5,6,7],
-                        3:[2,7,6],
-                        4:[1,5,6]}
+                2:[5,6,7],
+                3:[2,7,6],
+                4:[1,5,6]}
     target = Representation(None,None,None)
     target.rep = {1:[5,6,7],
-                        2:[2,3,4],
-                        3:[6,8,3],
-                        4:[2,7,9],
-                        5:[1,5,8],
-                        6:[7,4,9]}
+                2:[2,3,4],
+                3:[6,8,3],
+                4:[2,7,9],
+                5:[1,5,8],
+                6:[7,4,9]}
     return source, target

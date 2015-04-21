@@ -46,7 +46,7 @@ class Representation(object):
             if t > end:
                 break
             output.append(self._rep[t])
-        return output
+        return np.array(output, dtype = np.float32)
 
     def get_value_at_time(self,time):
         if time in self._rep:
@@ -124,7 +124,7 @@ class Representation(object):
         output = list()
         for k in sorted(self._rep.keys()):
             output.append(self._rep[k])
-        return np.array(output)
+        return np.array(output, dtype = np.float32)
 
     @rep.setter
     def rep(self, value):
