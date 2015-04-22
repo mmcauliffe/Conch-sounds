@@ -1,0 +1,20 @@
+[run]
+source = acousticsim
+
+[report]
+exclude_lines =
+    if __name__ == .__main__.:
+
+    raise AssertionError
+    raise NotImplementedError
+    pass
+
+    if sys.platform
+    if hasattr\(sys, 'frozen'\):
+
+    except ImportError:
+
+    if call_back
+    if stop_check
+
+    def run\(self\):

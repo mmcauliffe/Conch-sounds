@@ -26,3 +26,26 @@ def test(base_filenames):
         #assert_array_almost_equal(m['aspectrum'].T,aspec,decimal=4)
         assert_array_almost_equal(m['cepstra'].T,mfcc.to_array())
 
+def test_deltas(base_filenames):
+    for f in base_filenames:
+        print(f)
+        if f.startswith('silence'):
+            continue
+        wavpath = f+'.wav'
+        mfcc = Mfcc(wavpath,freq_lims = (0,8000), num_coeffs = 13 , win_len = 0.025,
+                                time_step = 0.01,num_filters=20,
+                                use_power = False, deltas = True
+                                )
+
+def test_norm_amp(base_filenames):
+    for f in base_filenames:
+        print(f)
+        if f.startswith('silence'):
+            continue
+        wavpath = f+'.wav'
+        mfcc = Mfcc(wavpath,freq_lims = (0,8000), num_coeffs = 1 , win_len = 0.025,
+                                time_step = 0.01,num_filters=20,
+                                use_power = True
+                                )
+        mfcc.norm_amp([(0,1)])
+

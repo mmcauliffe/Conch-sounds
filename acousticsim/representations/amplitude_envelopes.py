@@ -6,20 +6,37 @@ from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc,make_erb_cfs,nextpow2,fftfilt
 
 
-def window_envelopes(env,sr, win_len, time_step):
-    nperseg = int(win_len*sr)
-    nperstep = int(time_step*sr)
+def window_envelopes(env, win_len, time_step):
+    if env.is_windowed:
+        return
+    nperseg = int(win_len * env.sampling_rate)
+    if nperseg % 2 != 0:
+        nperseg -= 1
+    nperstep = int(time_step * env.sampling_rate)
     window = hanning(nperseg+2)[1:nperseg+1]
+    halfperseg = int(nperseg/2)
 
-
-    indices = arange(int(nperseg/2), x.shape[0] - int(nperseg/2) + 1, nperstep)
+    print(nperseg, halfperseg)
     num_samps, num_bands = env.shape
+    print(env.shape)
+    indices = arange(halfperseg, num_samps - halfperseg + 1, nperstep)
     num_frames = len(indices)
+    print(indices)
     rep = zeros((num_frames,num_bands))
-    for k in range(num_frames):
+    new_rep = dict()
+    for i in range(num_frames):
+        print(indices[i])
+        time_key = indices[i]/env.sampling_rate
+        rep_line = list()
+        print(indices[i] - halfperseg, indices[i] + halfperseg)
+        array = env[indices[i] - halfperseg, indices[i] + halfperseg]
+        print(array.shape)
         for b in range(num_bands):
-            rep[k,b] = sum(env[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2),b])
-    return rep
+            rep_line.append(sum(array[:, b]))
+        new_rep[time_key] = rep_line
+    env._rep = new_rep
+    env.is_windowed = True
+    return env
 
 class Envelopes(Representation):
     def __init__(self,filepath,freq_lims,num_bands, attributes = None):

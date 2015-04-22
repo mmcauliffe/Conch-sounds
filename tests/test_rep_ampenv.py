@@ -3,7 +3,7 @@
 import os
 import pytest
 
-from acousticsim.representations.amplitude_envelopes import Envelopes
+from acousticsim.representations.amplitude_envelopes import Envelopes, window_envelopes
 
 from scipy.io import loadmat
 
@@ -30,7 +30,7 @@ def test_envelope_gen(base_filenames):
         if not os.path.exists(matpath):
             continue
         m = loadmat(matpath)
-        env = Envelopes(wavpath,self.freq_lims, self.num_bands)
+        env = Envelopes(wavpath,(80,7800), 4)
         proc = env.process(debug=True)
         #for i in range(self.num_bands):
         #    denom = sqrt(sum(env[:,i]**2))
@@ -38,3 +38,11 @@ def test_envelope_gen(base_filenames):
         assert_array_almost_equal(m['wd1'].reshape((m['wd1'].shape[0],)),proc)
         assert_array_almost_equal(m['env1'],env.to_array())
 
+@pytest.mark.xfail
+def test_window_envelope(base_filenames):
+    for f in base_filenames:
+        print(f)
+        wavpath = f+'.wav'
+        env = Envelopes(wavpath,(80,7800), 4)
+        env.process()
+        rep = window_envelopes(env, 0.025, 0.010)
