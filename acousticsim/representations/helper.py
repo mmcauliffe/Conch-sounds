@@ -22,12 +22,20 @@ def extract_wav(path,outpath,begin_time,end_time):
 def resample(proc, factor, precision = 1):
     if factor == 1:
         return proc
+
+
+def resample(proc, factor, precision = 1):
+    if factor == 1:
+        return proc
     num_samples = proc.shape[0]
     x = arange(0,num_samples)
-    new_num_samples = int(num_samples * factor)
-
+    try:
+        num_channels = proc.shape[1]
+    except IndexError:
+        num_channels = 1
     newx = arange(0,num_samples, 1/factor)
-    resampled = zeros(proc.shape)
+    new_num_samples = newx.shape[0]
+    resampled = zeros((new_num_samples,))
     if factor < 1:
         try:
             num_channels = proc.shape[1]
@@ -41,25 +49,19 @@ def resample(proc, factor, precision = 1):
             #filter
             nfft = 1
             anti_aliasing_padding = 1000
-            print(temp.shape)
             pad(temp,anti_aliasing_padding, mode = 'constant', constant_values=0)
-            print(temp.shape)
             while nfft < num_samples + anti_aliasing_padding * 2:
-                nfft *= 2;
+                nfft *= 2
             F = rfft(temp,nfft)
-            print(F.shape)
-            print(nfft)
-            print(nfft/2)
-            for i in range(int(factor * (nfft/2)),int(nfft/2)):
+            for i in range(int(factor * (nfft/2)),int(nfft/2)+1):
                 F[i] = 0
+            #F[2] = 0
             temp = irfft(F,nfft)
-            temp = temp[anti_aliasing_padding:anti_aliasing_padding+ num_samples]
+            temp = temp[1:num_samples+1]
             #interpolate
             if precision == 0:
                 f = interp1d(x,temp, kind = 'nearest')
             elif precision <= 3:
-                print(x.shape)
-                print(temp.shape)
                 f = InterpolatedUnivariateSpline(x,temp, k = precision)
             else:
                 raise(NotImplementedError)

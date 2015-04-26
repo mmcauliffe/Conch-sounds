@@ -63,8 +63,6 @@ def to_mfcc_praat(praatpath, filename, num_coeffs = 12,
 
     return output
 
-
-
 def run_script(praatpath,name,*args):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     com = [praatpath]

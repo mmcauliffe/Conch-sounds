@@ -1,9 +1,11 @@
 from numpy import pi,exp,log,abs,sum,sqrt,array, hanning, arange, zeros,cos,ceil,mean
 
-from scipy.signal import filtfilt,butter,hilbert,decimate, resample
+from scipy.signal import filtfilt,butter,hilbert,decimate
 
 from acousticsim.representations.base import Representation
-from acousticsim.representations.helper import preproc,make_erb_cfs,nextpow2,fftfilt
+from acousticsim.representations.helper import (preproc, resample,
+                                                nextpow2,fftfilt)
+
 
 
 def window_envelopes(env, win_len, time_step):
@@ -94,9 +96,11 @@ class Envelopes(Representation):
             env = filtfilt(b,a,proc)
             env = abs(hilbert(env))
             if mode == 'downsample':
-                #env = resample(env,int(ceil(len(env)/int(ceil(self._sr/120)))))
+                env = resample(env, 120/self._sr, precision = 3)
                 #print(int(ceil(self._sr/120)))
-                env = decimate(env,int(ceil(self._sr/120)))
+                #env = decimate(env,int(ceil(self._sr/120)))
+
+                #env = env/max(env)
             envs.append(env)
         envs = array(envs).T
         if mode == 'downsample':

@@ -45,10 +45,16 @@ def test_decimate():
     assert(False)
 
 @pytest.mark.xfail
-def test_cubic_resample(test_dir):
+def test_cubic_resample(soundfiles_dir):
+    #from matplotlib import pyplot as plt
     wav44 = 'pink_noise_44.1k.wav'
     wav44_16 = 'pink_noise_cubic_resampled_to_16k.wav'
-    expected_sr, expected = preproc(os.path.join(test_dir,wav44_16),alpha=0)
-    orig_sr, proc = preproc(os.path.join(test_dir,wav44),alpha=0)
+    expected_sr, expected = preproc(os.path.join(soundfiles_dir,wav44_16),alpha=0)
+    orig_sr, proc = preproc(os.path.join(soundfiles_dir,wav44),alpha=0)
     resampled = resample(proc, 16000/44100, 3)
-    assert(abs(resampled - proc) < 0.0001)
+    #plt.plot(resampled)
+    #plt.plot(expected)
+    #plt.show()
+    #plt.plot(resampled-expected)
+    #plt.show()
+    assert_array_almost_equal(resampled, expected)
