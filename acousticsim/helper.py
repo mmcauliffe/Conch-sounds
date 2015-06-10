@@ -15,7 +15,7 @@ from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 from acousticsim.exceptions import AcousticSimError,NoWavError
 from acousticsim.multiprocessing import generate_cache, calc_asim
 
-from acousticsim.praat.textgrid import TextGrid
+from textgrid import TextGrid
 
 def _build_to_rep(**kwargs):
     rep = kwargs.get('rep', 'mfcc')

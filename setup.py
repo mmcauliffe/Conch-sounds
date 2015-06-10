@@ -46,12 +46,13 @@ setup(name='acousticsim',
                 'acousticsim.praat',
                 'acousticsim.clustering'],
       package_data={'acousticsim.praat': ['*.praat']},
+      dependency_links = ['https://github.com/kylebgorman/textgrid/tarball/master#egg=textgrid-1.0'],
       install_requires=[
             'numpy',
             'scipy',
             'scikit-learn',
             'networkx',
-
+            'textgrid',
       ],
     cmdclass={'test': PyTest},
     extras_require={
