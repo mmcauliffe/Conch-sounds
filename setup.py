@@ -25,8 +25,7 @@ class PyTest(TestCommand):
 
 setup(name='acousticsim',
       version=acousticsim.__version__,
-      description='',
-      long_description='',
+      description = 'Analyze acoustic similarity in Python',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python',
@@ -37,6 +36,7 @@ setup(name='acousticsim',
       ],
       keywords='phonetics acoustics similarity',
       url='https://github.com/mmcauliffe/python-acoustic-similarity',
+      download_url = 'https://github.com/mmcauliffe/python-acoustic-similarity/tarball/{}'.format(acousticsim.__version__),
       author='Michael McAuliffe',
       author_email='michael.e.mcauliffe@gmail.com',
       packages=['acousticsim',
