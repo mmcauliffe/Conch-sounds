@@ -15,6 +15,14 @@ cross-correlation.
 Installation
 ==================
 
+The latest released version can be installed via:
+
+`pip install acousticsim --allow-external textgrid --allow-unverified textgrid --process-dependency-links`
+
+The package `acousticsim` currently depeneds on https://github.com/kylebgorman/textgrid for a simple interface for Praat TextGrids.  Future versions may move towards packages that are hosted on PyPI.
+
+Alternatively, you can install the package from the source:
+
 1. This package requires numpy and scipy to be installed.  Precompiled 
 Windows binaries can be found at http://www.lfd.uci.edu/~gohlke/pythonlibs/.
 Further information is available at http://www.scipy.org/install.html
