@@ -19,8 +19,8 @@ fi
 
 if [ ! -d "$HOME/downloads/praat" ]; then
   cd $HOME/downloads
-  wget http://www.fon.hum.uva.nl/praat/praat5408_linux64.tar.gz
-  tar -zxvf praat5408_linux64.tar.gz
+  wget http://www.fon.hum.uva.nl/praat/praat5412_linux64.tar.gz
+  tar -zxvf praat5412_linux64.tar.gz
 else
   echo "Praat already installed."
 fi
