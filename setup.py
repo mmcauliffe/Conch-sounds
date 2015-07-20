@@ -2,9 +2,9 @@ import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
-import acousticsim
-
 import multiprocessing
+
+import acousticsim
 
 def readme():
     with open('README.md') as f:
@@ -44,14 +44,15 @@ setup(name='acousticsim',
                 'acousticsim.representations',
                 'acousticsim.processing',
                 'acousticsim.praat',
-                'acousticsim.tuning',
                 'acousticsim.clustering'],
+      package_data={'acousticsim.praat': ['*.praat']},
+      dependency_links = ['https://github.com/kylebgorman/textgrid/tarball/master#egg=textgrid-1.0'],
       install_requires=[
             'numpy',
             'scipy',
             'scikit-learn',
             'networkx',
-
+            'textgrid',
       ],
     cmdclass={'test': PyTest},
     extras_require={

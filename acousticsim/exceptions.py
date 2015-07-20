@@ -1,3 +1,5 @@
+import sys
+import traceback
 
 class AcousticSimError(Exception):
     def __init__(self, value = None):
@@ -18,3 +20,29 @@ class NoWavError(AcousticSimError):
         self.details = 'The following files were found in {}:\n\n'.format(directory)
         for f in files:
             self.details += '{}\n'.format(f)
+
+class MfccError(AcousticSimError):
+    pass
+
+class AcousticSimPythonError(AcousticSimError):
+    """
+    Exception wrapper around unanticipated exceptions to better display
+    them to users.
+
+    Parameters
+    ----------
+    exc : Exception
+        Uncaught exception to be be output in a way that can be interpreted
+    """
+    def __init__(self, exc):
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        self.main = 'Something went wrong that wasn\'t handled by PCT.'
+
+        self.information = 'Please forward to the details below to the developers.'
+        self.details = ''.join(traceback.format_exception(exc_type, exc_value,
+                                          exc_traceback))
+    def __str__(self):
+        return '\n'.join([self.main, self.information, self.details])
+
+class AcousticSimPraatError(AcousticSimError):
+    pass

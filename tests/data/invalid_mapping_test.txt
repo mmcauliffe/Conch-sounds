@@ -1,0 +1,2 @@
+tests/data/soundfiles/pink_noise_16k.wav	tests/data/soundfiles/sine_100_16k.wav
+tests/data/soundfiles/pink_noise_16k.wav	tests/data/soundfiles/notawavfile.wav

@@ -4,16 +4,13 @@ import numpy as np
 from acousticsim.processing.segmentation import to_segments
 
 class Representation(object):
-    _duration = None
-    _sr = None
-    _filepath = None
-    _rep = dict()
-    _true_label = None
-    _attributes = None
-    _segments = None
-    _is_windowed = False
 
-    def __init__(self,filepath, freq_lims, attributes):
+    def __init__(self, filepath, freq_lims, attributes):
+        self._duration = None
+        self._sr = None
+        self._true_label = None
+        self._attributes = None
+        self._segments = None
         self._vowels = dict()
         self._transcription = list()
         self._rep = dict()
@@ -22,6 +19,8 @@ class Representation(object):
         self._filepath = filepath
         self._freq_lims = freq_lims
         self._attributes = attributes
+        self.is_windowed = False
+
 
     def __getitem__(self,key):
         if isinstance(key,str):
@@ -45,7 +44,7 @@ class Representation(object):
             if t > end:
                 break
             output.append(self._rep[t])
-        return output
+        return np.array(output, dtype = np.float32)
 
     def get_value_at_time(self,time):
         if time in self._rep:
@@ -97,7 +96,7 @@ class Representation(object):
         return output
 
     def window(self, win_len, time_step):
-        if self._is_windowed:
+        if self.is_windowed:
             return False
         pass
 
@@ -107,7 +106,7 @@ class Representation(object):
         return sorted(self._rep.keys())[index]
 
     def segment(self,threshold = 0.1):
-        if not self._is_windowed:
+        if not self.is_windowed:
             return False
         segments, means = to_segments(self.to_array(), threshold = threshold,return_means=True)
         begin = 0
@@ -123,7 +122,7 @@ class Representation(object):
         output = list()
         for k in sorted(self._rep.keys()):
             output.append(self._rep[k])
-        return np.array(output)
+        return np.array(output, dtype = np.float32)
 
     @rep.setter
     def rep(self, value):
@@ -178,7 +177,11 @@ class Representation(object):
 
     @property
     def shape(self):
-        return self._rep.shape
+        num_frames = len(self._rep.keys())
+        if num_frames == 0:
+            return 0,0
+        else:
+            return num_frames, len(next(iter(self._rep.values())))
 
     @property
     def sampling_rate(self):

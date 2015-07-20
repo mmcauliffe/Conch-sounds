@@ -1,5 +1,5 @@
 
-from numpy import log10,zeros,abs,arange, hanning, pad, spacing, ceil, log
+from numpy import log10,zeros,abs,arange, hanning, pad, spacing, ceil, log, floor
 from numpy.fft import fft
 
 
@@ -9,17 +9,20 @@ from .helper import preproc
 
 def to_powerspec(x, sr, win_len, time_step):
     nperseg = int(win_len*sr)
+    if nperseg % 2 != 0:
+        nperseg -= 1
+
     nperstep = int(time_step*sr)
     nfft = int(2**(ceil(log(nperseg)/log(2))))
     window = hanning(nperseg+2)[1:nperseg+1]
-
-    indices = arange(int(nperseg/2), x.shape[0] - (int(nperseg/2) + 1), nperstep)
+    halfperseg = int(nperseg/2)
+    indices = arange(halfperseg, x.shape[0] - (halfperseg + 1), nperstep)
     num_frames = len(indices)
 
     #pspec = zeros((num_frames,int(nfft/2)+1))
     pspec = dict()
     for i in range(num_frames):
-        X = x[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
+        X = x[indices[i]-halfperseg:indices[i]+halfperseg]
         X = X * window
         fx = fft(X, n = nfft)
         power = abs(fx[:int(nfft/2)+1])**2

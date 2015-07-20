@@ -3,11 +3,13 @@
 from acousticsim.main import analyze_directory
 from acousticsim.clustering.network import ClusterNetwork
 
-def test_clustering(test_dir, call_back):
+def test_clustering(soundfiles_dir, call_back, do_long_tests):
+    if not do_long_tests:
+        return
     kwargs = {'rep': 'mfcc','win_len': 0.025,
                 'time_step': 0.01, 'num_coeffs': 13,
                 'freq_lims': (0,8000),'return_rep':True}
-    scores,reps = analyze_directory(test_dir, call_back = call_back,**kwargs)
+    scores,reps = analyze_directory(soundfiles_dir, call_back = call_back,**kwargs)
     kwargs['cache'] = reps
     cn = ClusterNetwork(reps)
 

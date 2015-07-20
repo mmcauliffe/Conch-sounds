@@ -147,7 +147,7 @@ class Pitch(Representation):
 
         for i,p in enumerate(path[state]):
             #print(candidate_matrix[i][p])
-            self._rep[indices[i]/self._sr] = candidate_matrix[i][p][0]
+            self._rep[indices[i]/self._sr] = [candidate_matrix[i][p][0]]
         #print_dptable(V)
         #raise(ValueError)
 
@@ -213,7 +213,7 @@ class Harmonicity(Pitch):
                 #print(rs)
                 #plt.plot(orig_ac)
                 #plt.show()
-            self._rep[indices[i]/self._sr] = 10 * log10(r/(1-r))
+            self._rep[indices[i]/self._sr] = [10 * log10(r/(1-r))]
 
 
 

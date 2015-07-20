@@ -33,6 +33,5 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
-*.txt
 !requirements.txt
 *.bat

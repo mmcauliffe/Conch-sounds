@@ -1,12 +1,15 @@
 
 import os
-import subprocess
+from subprocess import Popen, PIPE
 import re
 
 from acousticsim.representations.formants import Formants
 from acousticsim.representations.pitch import Pitch
 from acousticsim.representations.intensity import Intensity
 from acousticsim.representations.base import Representation
+from acousticsim.representations.mfcc import Mfcc, freq_to_mel
+
+from acousticsim.exceptions import AcousticSimPraatError
 
 def to_pitch_praat(praatpath, filename, time_step = 0.01, freq_lims = (75, 600), attributes = None):
     script = 'pitch.praat'
@@ -14,7 +17,7 @@ def to_pitch_praat(praatpath, filename, time_step = 0.01, freq_lims = (75, 600),
     output = Pitch(filename, time_step, freq_lims, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
-        r[k] = v['Pitch']
+        r[k] = [v['Pitch']]
     output.rep = r
     return output
 
@@ -43,16 +46,22 @@ def to_intensity_praat(praatpath, filename, time_step = 0.01, attributes = None)
     output = Intensity(filename, time_step, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
-        print(k,v['Intensity'])
-        r[k] = v['Intensity']
+        r[k] = [v['Intensity']]
     output.rep = r
     return output
 
-def to_mfcc_praat(praatpath, filename, num_coeffs = 12, win_len = 0.025, time_step = 0.01, max_freq = 7800):
+def to_mfcc_praat(praatpath, filename, num_coeffs = 12,
+                win_len = 0.025, time_step = 0.01, max_freq = 7800, use_power = False, attributes = None):
     script = 'mfcc.praat'
-    listing = run_script(praatpath, script, filename, num_coeffs, win_len, time_step, max_freq)
-    output = Representation(filename, (0,max_freq), attributes = attributes)
+    listing = run_script(praatpath, script, filename, num_coeffs, win_len, time_step, freq_to_mel(max_freq))
+    output = Mfcc(filename, (0,max_freq), num_coeffs, win_len, time_step,
+                attributes = attributes, process = False)
+    r = read_praat_out(listing)
+    for k,v in r.items():
+        r[k] = [v[k2] for k2 in sorted(v.keys())]
+    output.rep = r
 
+    return output
 
 def run_script(praatpath,name,*args):
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -60,11 +69,16 @@ def run_script(praatpath,name,*args):
     if praatpath.endswith('con.exe'):
         com += ['-a']
     com +=[os.path.join(script_dir,name)] + list(map(str,args))
-    p = subprocess.Popen(com,stdout=subprocess.PIPE,stderr=subprocess.PIPE,stdin=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    if stderr:
-        print('stderr: %s' % str(stderr))
-    return str(stdout.decode())
+    with Popen(com,stdout=PIPE,stderr=PIPE,stdin=PIPE) as p:
+        try:
+            text = str(p.stdout.read().decode('latin'))
+            err = str(p.stderr.read().decode('latin'))
+        except UnicodeDecodeError:
+            print(p.stdout.read())
+            print(p.stderr.read())
+    if err:
+        raise(AcousticSimPraatError(err))
+    return text
 
 def read_praat_out(text):
     if not text:
@@ -72,7 +86,11 @@ def read_praat_out(text):
     lines = text.splitlines()
     head = None
     while head is None:
-        l = lines.pop(0)
+        try:
+            l = lines.pop(0)
+        except IndexError:
+            print(text)
+            raise
         if l.startswith('time'):
             head = re.sub('[(]\w+[)]','',l)
             head = head.split("\t")[1:]

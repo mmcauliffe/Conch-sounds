@@ -1,4 +1,5 @@
 from numpy import zeros,inf, ones
+import numpy as np
 from scipy.spatial.distance import euclidean
 import operator
 
@@ -21,8 +22,10 @@ def dtw_distance(rep_one, rep_two,norm=True):
         Distance of dynamically time warping `rep_one` to `rep_two`.
 
     """
-    rep_one = rep_one.to_array()
-    rep_two = rep_two.to_array()
+    if not isinstance(rep_one, np.ndarray):
+        rep_one = rep_one.to_array()
+    if not isinstance(rep_two, np.ndarray):
+        rep_two = rep_two.to_array()
     assert(rep_one.shape[1] == rep_two.shape[1])
     distMat = generate_distance_matrix(rep_one,rep_two)
     return regularDTW(distMat,norm=norm)
