@@ -17,9 +17,7 @@ Installation
 
 The latest released version can be installed via:
 
-`pip install acousticsim --allow-external textgrid --allow-unverified textgrid --process-dependency-links`
-
-The package `acousticsim` currently depeneds on https://github.com/kylebgorman/textgrid for a simple interface for Praat TextGrids.  Future versions may move towards packages that are hosted on PyPI.
+`pip install acousticsim`
 
 Alternatively, you can install the package from the source:
 
