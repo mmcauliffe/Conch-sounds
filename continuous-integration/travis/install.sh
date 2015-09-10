@@ -19,8 +19,12 @@ fi
 
 if [ ! -d "$HOME/downloads/praat" ]; then
   cd $HOME/downloads
-  wget http://www.fon.hum.uva.nl/praat/praat5412_linux64.tar.gz
-  tar -zxvf praat5412_linux64.tar.gz
+  latestVer=$(curl -s 'http://nginx.org/en/download.html' |
+   grep -o 'praat.+_linux64\.tar\.gz')
+
+  # Download.
+  curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
+  tar -zxvf praat-latest.tar.gz
 else
   echo "Praat already installed."
 fi
