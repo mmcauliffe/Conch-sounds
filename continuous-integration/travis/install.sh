@@ -19,8 +19,8 @@ fi
 
 if [ ! -d "$HOME/downloads/praat" ]; then
   cd $HOME/downloads
-  latestVer=$(curl -s 'http://nginx.org/en/download.html' |
-   grep -o 'praat.+_linux64\.tar\.gz')
+  latestVer=$(curl -s 'http://www.fon.hum.uva.nl/praat/download_linux.html' |
+   grep -Eo 'praat[0-9]+_linux64\.tar\.gz' | head -1)
 
   # Download.
   curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
