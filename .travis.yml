@@ -32,5 +32,5 @@ after_success:
 
 cache:
   directories:
-    - $HOME/downloads
-    - $HOME/miniconda
+    #- $HOME/downloads
+    #- $HOME/miniconda
