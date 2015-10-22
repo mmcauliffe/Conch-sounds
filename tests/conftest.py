@@ -51,7 +51,7 @@ def base_filenames(soundfiles_dir):
 @pytest.fixture(scope='session')
 def praatpath():
     if os.environ.get('TRAVIS'):
-        return os.path.join(os.environ.get('HOME'),'downloads','praat')
+        return os.path.join(os.environ.get('HOME'),'tools','praat')
     return r'C:\Users\michael\Documents\Praat\praatcon.exe'
 
 @pytest.fixture(scope='session')

@@ -11,7 +11,7 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda info -a
   conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest scikit-learn networkx setuptools=18.1
   source activate test-environment
-  pip install -q coveralls coverage
+  pip install -q textgrid coveralls coverage
 else
   echo "Miniconda already installed."
 fi
