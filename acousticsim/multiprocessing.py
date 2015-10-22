@@ -1,4 +1,6 @@
 import os
+import sys
+import traceback
 from multiprocessing import Process, Manager, Queue, cpu_count, Value, Lock, JoinableQueue
 import time
 from queue import Empty, Full
@@ -13,6 +15,9 @@ from acousticsim.representations import Envelopes, Mfcc
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
 from acousticsim.exceptions import AcousticSimError,NoWavError, AcousticSimPythonError
+
+def default_njobs():
+    return int(0.75 * cpu_count())
 
 class Counter(object):
     def __init__(self, initval=0):
@@ -77,7 +82,7 @@ class RepWorker(Process):
                 self.return_dict[os.path.split(filename)[1]] = rep
             except Exception as e:
                 self.stopped.stop()
-                self.return_dict['error'] = AcousticSimPythonError(e)
+                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
 
         return
 
@@ -129,7 +134,7 @@ class DistWorker(Process):
                 self.return_dict[filetup] = ratio
             except Exception as e:
                 self.stopped.stop()
-                self.return_dict['error'] = AcousticSimPythonError(e)
+                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
 
         return
 
@@ -211,7 +216,7 @@ def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, st
     counter = Counter()
     for i in range(num_procs):
         p = DistWorker(job_queue,
-                      return_dict, counter,dist_func, output_sim,axb,cache, stopped)
+                      return_dict, counter, dist_func, output_sim, axb, cache, stopped)
         procs.append(p)
         p.start()
 

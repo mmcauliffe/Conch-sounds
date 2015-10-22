@@ -34,13 +34,12 @@ class AcousticSimPythonError(AcousticSimError):
     exc : Exception
         Uncaught exception to be be output in a way that can be interpreted
     """
-    def __init__(self, exc):
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        self.main = 'Something went wrong that wasn\'t handled by PCT.'
+    def __init__(self, details):
+        self.main = 'Something went wrong that wasn\'t handled by acousticsim.'
 
         self.information = 'Please forward to the details below to the developers.'
-        self.details = ''.join(traceback.format_exception(exc_type, exc_value,
-                                          exc_traceback))
+        self.details = ''.join(details)
+
     def __str__(self):
         return '\n'.join([self.main, self.information, self.details])
 

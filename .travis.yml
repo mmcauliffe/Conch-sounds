@@ -20,7 +20,6 @@ install:
   - source activate test-environment
   - which python
   - conda list
-  - python setup.py install
 
 # Run test
 script:
@@ -33,3 +32,4 @@ after_success:
 cache:
   directories:
     - $HOME/downloads
+    - $HOME/tools

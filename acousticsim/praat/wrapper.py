@@ -1,5 +1,6 @@
 
 import os
+import sys
 from subprocess import Popen, PIPE
 import re
 
@@ -11,22 +12,26 @@ from acousticsim.representations.mfcc import Mfcc, freq_to_mel
 
 from acousticsim.exceptions import AcousticSimPraatError
 
-def to_pitch_praat(praatpath, filename, time_step = 0.01, freq_lims = (75, 600), attributes = None):
+def to_pitch_praat(filepath, praatpath = None, time_step = 0.01, freq_lims = (75, 600), attributes = None):
     script = 'pitch.praat'
-    listing = run_script(praatpath, script, filename, time_step, freq_lims[0], freq_lims[1])
-    output = Pitch(filename, time_step, freq_lims, attributes = attributes)
+    if praatpath is None:
+        praatpath = 'praat'
+        if sys.platform == 'win32':
+            praatpath.append('con.exe')
+    listing = run_script(praatpath, script, filepath, time_step, freq_lims[0], freq_lims[1])
+    output = Pitch(filepath, time_step, freq_lims, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
         r[k] = [v['Pitch']]
     output.rep = r
     return output
 
-def to_formants_praat(praatpath, filename, time_step = 0.01,
+def to_formants_praat(filepath, praatpath = None, time_step = 0.01,
                     win_len = 0.025, num_formants = 5, max_freq = 5000, attributes = None):
     script = 'formants.praat'
-    listing = run_script(praatpath, script, filename, time_step,
+    listing = run_script(praatpath, script, filepath, time_step,
                     win_len, num_formants, max_freq)
-    output = Formants(filename, max_freq, num_formants, win_len,
+    output = Formants(filepath, max_freq, num_formants, win_len,
                     time_step, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
@@ -40,21 +45,21 @@ def to_formants_praat(praatpath, filename, time_step = 0.01,
     output.rep = r
     return output
 
-def to_intensity_praat(praatpath, filename, time_step = 0.01, attributes = None):
+def to_intensity_praat(filepath, praatpath = None, time_step = 0.01, attributes = None):
     script = 'intensity.praat'
-    listing = run_script(praatpath, script, filename, time_step)
-    output = Intensity(filename, time_step, attributes = attributes)
+    listing = run_script(praatpath, script, filepath, time_step)
+    output = Intensity(filepath, time_step, attributes = attributes)
     r = read_praat_out(listing)
     for k,v in r.items():
         r[k] = [v['Intensity']]
     output.rep = r
     return output
 
-def to_mfcc_praat(praatpath, filename, num_coeffs = 12,
+def to_mfcc_praat(filepath, praatpath = None, num_coeffs = 12,
                 win_len = 0.025, time_step = 0.01, max_freq = 7800, use_power = False, attributes = None):
     script = 'mfcc.praat'
-    listing = run_script(praatpath, script, filename, num_coeffs, win_len, time_step, freq_to_mel(max_freq))
-    output = Mfcc(filename, (0,max_freq), num_coeffs, win_len, time_step,
+    listing = run_script(praatpath, script, filepath, num_coeffs, win_len, time_step, freq_to_mel(max_freq))
+    output = Mfcc(filepath, (0,max_freq), num_coeffs, win_len, time_step,
                 attributes = attributes, process = False)
     r = read_praat_out(listing)
     for k,v in r.items():
@@ -63,7 +68,7 @@ def to_mfcc_praat(praatpath, filename, num_coeffs = 12,
 
     return output
 
-def run_script(praatpath,name,*args):
+def run_script(praatpath, name, *args):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     com = [praatpath]
     if praatpath.endswith('con.exe'):

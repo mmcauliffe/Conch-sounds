@@ -13,6 +13,13 @@ from .helper import preproc
 from .gammatone import to_gammatone
 
 class Pitch(Representation):
+    def __init__(self, filepath, time_step, freq_lims,
+                window_shape = 'gaussian', attributes=None):
+        Representation.__init__(self,filepath, freq_lims, attributes)
+        self._time_step = time_step
+
+
+class ACPitch(Pitch):
     #Praat parameters
     _sil_thresh = 0.03
     _voice_thresh = 0.45
@@ -24,12 +31,12 @@ class Pitch(Representation):
 
     def __init__(self, filepath, time_step, freq_lims,
                 window_shape = 'gaussian', attributes=None):
-        Representation.__init__(self,filepath, freq_lims, attributes)
+        Pitch.__init__(self, filepath, time_step, freq_lims, window_shape, attributes)
         self._win_len = self._periods_per_window/self._freq_lims[0]
         self._window_shape = window_shape
         if self._window_shape == 'gaussian':
             self._win_len *= 2
-        self._time_step = time_step
+        self.process()
 
     def process(self):
         self._sr, proc = preproc(self._filepath,alpha=None)
@@ -156,7 +163,7 @@ class Pitch(Representation):
             return False
         return True
 
-class Harmonicity(Pitch):
+class Harmonicity(ACPitch):
     #Praat parameters
     _sil_thresh = 0.1
     _voice_thresh = 0
@@ -168,8 +175,7 @@ class Harmonicity(Pitch):
 
     def __init__(self, filepath, time_step, min_pitch,
                 window_shape = 'gaussian', attributes=None):
-        freq_lims = (min_pitch,None)
-        Pitch.__init__(self, filepath, time_step, freq_lims,
+        ACPitch.__init__(self, filepath, time_step, (min_pitch,None),
                 window_shape, attributes)
 
     def process(self):

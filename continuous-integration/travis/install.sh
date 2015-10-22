@@ -17,14 +17,28 @@ else
   echo "Miniconda already installed."
 fi
 
-if [ ! -d "$HOME/downloads/praat" ]; then
+if [ ! -f "$HOME/tools/praat" ]; then
   cd $HOME/downloads
   latestVer=$(curl -s 'http://nginx.org/en/download.html' |
    grep -o 'praat.+_linux64\.tar\.gz')
-
+  echo "Found ${latestVer}"
   # Download.
   curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
   tar -zxvf praat-latest.tar.gz
+  mv praat $HOME/tools/praat
 else
   echo "Praat already installed."
+fi
+
+if [ ! -f "$HOME/tools/reaper" ]; then
+  cd $HOME/downloads
+  git clone https://github.com/google/REAPER.git
+  cd REAPER
+  mkdir build
+  cd build
+  cmake ..
+  make
+  mv reaper $HOME/tools/reaper
+else
+  echo "Reaper already installed"
 fi
