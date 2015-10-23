@@ -16,7 +16,8 @@ def to_pitch_reaper(filepath, reaper = None, time_step = None, freq_lims = None,
         com.extend(['-e', str(time_step)])
     if freq_lims is not None:
         com.extend(['-m', str(freq_lims[0]), '-x', str(freq_lims[1])])
-    subprocess.call(com)
+    devnull = open(os.devnull, 'w')
+    subprocess.call(com, stdout=devnull, stderr=devnull)
     output = Pitch(filepath, time_step, freq_lims, attributes = attributes)
     output.rep = parse_output(output_path)
     os.remove(output_path)
