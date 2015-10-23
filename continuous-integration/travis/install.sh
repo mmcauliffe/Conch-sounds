@@ -2,9 +2,11 @@
 set -e
 #check to see if miniconda folder is empty
 if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment$TRAVIS_PYTHON_VERSION" ]; then
-  wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  chmod +x miniconda.sh
-  ./miniconda.sh -b -p $HOME/miniconda/miniconda
+  if [ ! -d "$HOME/miniconda/miniconda" ]; then
+    wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    chmod +x miniconda.sh
+    ./miniconda.sh -b -p $HOME/miniconda/miniconda
+  fi
   export PATH="$HOME/miniconda/miniconda/bin:$PATH"
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
