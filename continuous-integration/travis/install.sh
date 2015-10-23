@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 #check to see if miniconda folder is empty
-if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
+if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment$TRAVIS_PYTHON_VERSION" ]; then
   wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   chmod +x miniconda.sh
   ./miniconda.sh -b -p $HOME/miniconda/miniconda
@@ -9,8 +9,8 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
-  conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest scikit-learn networkx setuptools=18.1
-  source activate test-environment
+  conda create -q -n "test-environment$TRAVIS_PYTHON_VERSION" python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest scikit-learn networkx setuptools=18.1
+  source activate "test-environment$TRAVIS_PYTHON_VERSION"
   pip install -q textgrid coveralls coverage
 else
   echo "Miniconda already installed."
