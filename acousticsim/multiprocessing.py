@@ -192,22 +192,39 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
     return return_dict
 
 def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, stop_check):
-    if len(path_mapping[0]) == 3:
-        axb = True
-    else:
+    try:
+        if len(path_mapping[0]) == 3:
+            axb = True
+        else:
+            axb = False
+        mapping_gen = False
+    except TypeError:
         axb = False
+        mapping_gen = True
     job_queue = JoinableQueue(100)
     stopped = Stopped()
-
     map_ind = 0
-    while True:
-        if map_ind == len(path_mapping):
-            break
-        try:
-            job_queue.put(path_mapping[map_ind],False)
-        except Full:
-            break
-        map_ind += 1
+    if mapping_gen:
+        while True:
+            try:
+                pathmap = next(path_mapping)
+                map_ind += 1
+            except StopIteration:
+                break
+            try:
+                job_queue.put(pathmap,False)
+            except Full:
+                break
+
+    else:
+        while True:
+            if map_ind == len(path_mapping):
+                break
+            try:
+                job_queue.put(path_mapping[map_ind],False)
+            except Full:
+                break
+            map_ind += 1
 
     manager = Manager()
     return_dict = manager.dict()
@@ -222,21 +239,42 @@ def calc_asim(path_mapping, cache,dist_func, output_sim,num_procs, call_back, st
 
     if call_back is not None:
         call_back('Calculating acoustic similarity...')
-        call_back(0,len(path_mapping))
+        try:
+            call_back(0,len(path_mapping))
+        except TypeError:
+            pass
 
-    while True:
-        if map_ind == len(path_mapping):
-            break
-        if stop_check is not None and stop_check():
-            stopped.stop()
-            time.sleep(1)
-            break
-        job_queue.put(path_mapping[map_ind])
 
-        if call_back is not None:
-            value = counter.value()
-            call_back(value)
-        map_ind += 1
+    if mapping_gen:
+        while True:
+            try:
+                pathmap = next(path_mapping)
+            except StopIteration:
+                break
+            if stop_check is not None and stop_check():
+                stopped.stop()
+                time.sleep(1)
+                break
+            job_queue.put(pathmap)
+            if call_back is not None:
+                value = counter.value()
+                call_back(value)
+            map_ind += 1
+
+    else:
+        while True:
+            if map_ind == len(path_mapping):
+                break
+            if stop_check is not None and stop_check():
+                stopped.stop()
+                time.sleep(1)
+                break
+            job_queue.put(path_mapping[map_ind])
+
+            if call_back is not None:
+                value = counter.value()
+                call_back(value)
+            map_ind += 1
 
     job_queue.join()
 
