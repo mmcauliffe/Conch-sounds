@@ -282,8 +282,8 @@ def analyze_directory(directory, **kwargs):
         all_files.append(path)
         if f.lower().endswith('.wav'):
             wavs.append(path)
-        if os.path.isdir(f):
-            directories.append(f)
+        if os.path.isdir(path):
+            directories.append(path)
     if not wavs:
         return analyze_directories(directories, **kwargs)
 
