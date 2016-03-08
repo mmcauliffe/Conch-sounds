@@ -15,7 +15,6 @@ from numpy import (pad,log,array,zeros, floor,exp,sqrt,dot,arange,
                     hanning,sin, pi,linspace,log10,round,maximum,minimum,
                     sum,cos,spacing,diag,ceil)
 
-@jit
 def lpc_ref(signal, order):
     """Compute the Linear Prediction Coefficients.
 

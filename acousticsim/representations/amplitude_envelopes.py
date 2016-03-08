@@ -2,8 +2,10 @@ from numpy import pi,exp,log,abs,sum,sqrt,array, hanning, arange, zeros,cos,ceil
 
 from scipy.signal import filtfilt,butter,hilbert,decimate
 
+from librosa import resample
+
 from acousticsim.representations.base import Representation
-from acousticsim.representations.helper import (preproc, resample,
+from acousticsim.representations.helper import (preproc,
                                                 nextpow2,fftfilt)
 
 
@@ -96,7 +98,7 @@ class Envelopes(Representation):
             env = filtfilt(b,a,proc)
             env = abs(hilbert(env))
             if mode == 'downsample':
-                env = resample(env, 120/self._sr, precision = 3)
+                env = resample(env, self._sr, 120)
                 #print(int(ceil(self._sr/120)))
                 #env = decimate(env,int(ceil(self._sr/120)))
 

@@ -12,6 +12,7 @@ from acousticsim.exceptions import MfccError
 from acousticsim.exceptions import AcousticSimError
 
 from scipy.fftpack import dct
+from numba import jit
 
 def freq_to_mel(freq):
     """Convert a value in Hertz to a value in mel.
@@ -47,7 +48,7 @@ def mel_to_freq(mel):
 
     return 700*(10**(mel/2595.0)-1)
 
-
+@jit
 def _dct_spectrum(spec):
     """Convert a spectrum into a cepstrum via type-III DCT (following HTK).
 

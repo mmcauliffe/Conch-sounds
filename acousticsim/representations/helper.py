@@ -19,63 +19,6 @@ def extract_wav(path,outpath,begin_time,end_time):
     newsig = sig[begin:end]
     wavfile.write(outpath,sr,newsig)
 
-def resample(proc, factor, precision = 1):
-    if factor == 1:
-        return proc
-
-
-def resample(proc, factor, precision = 1):
-    if factor == 1:
-        return proc
-    num_samples = proc.shape[0]
-    x = arange(0,num_samples)
-    try:
-        num_channels = proc.shape[1]
-    except IndexError:
-        num_channels = 1
-    newx = arange(0,num_samples, 1/factor)
-    new_num_samples = newx.shape[0]
-    resampled = zeros((new_num_samples,))
-    if factor < 1:
-        try:
-            num_channels = proc.shape[1]
-        except IndexError:
-            num_channels = 1
-        for ic in range(num_channels):
-            try:
-                temp = proc[:,ic]
-            except IndexError:
-                temp = proc[:]
-            #filter
-            nfft = 1
-            anti_aliasing_padding = 1000
-            pad(temp,anti_aliasing_padding, mode = 'constant', constant_values=0)
-            while nfft < num_samples + anti_aliasing_padding * 2:
-                nfft *= 2
-            F = rfft(temp,nfft)
-            for i in range(int(factor * (nfft/2)),int(nfft/2)+1):
-                F[i] = 0
-            #F[2] = 0
-            temp = irfft(F,nfft)
-            temp = temp[1:num_samples+1]
-            #interpolate
-            if precision == 0:
-                f = interp1d(x,temp, kind = 'nearest')
-            elif precision <= 3:
-                f = InterpolatedUnivariateSpline(x,temp, k = precision)
-            else:
-                raise(NotImplementedError)
-            try:
-                resampled[:,ic] = f(newx)
-            except IndexError:
-                resampled[:] = f(newx)
-    elif factor > 1:
-        raise(NotImplementedError)
-    return resampled
-
-def sinc_interp1d(x,y, order):
-    pass
-
 def preproc(path,sr=16000,alpha=0.95):
     """Preprocess a .wav file for later processing.  Currently assumes a
     16-bit PCM input.  Only returns left channel of stereo files.

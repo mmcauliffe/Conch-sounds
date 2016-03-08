@@ -1,7 +1,9 @@
 import numpy as np
 from numpy import log, sqrt, sum, correlate,argmax
 #from scipy.signal import correlate,correlate2d,fftconvolve
+from numba import jit
 
+@jit
 def xcorr_distance(rep_one,rep_two):
     if not isinstance(rep_one, np.ndarray):
         rep_one = rep_one.to_array()
