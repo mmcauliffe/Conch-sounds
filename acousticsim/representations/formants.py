@@ -2,17 +2,20 @@
 
 from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc,nextpow2
-
+from numba import jit
 import numpy as np
 import scipy as sp
 import scipy.signal as sig
 
 from scipy.fftpack import fft,ifft
-from scipy.signal import resample, gaussian
+from scipy.signal import gaussian
+
+from librosa import resample
 from numpy import (pad,log,array,zeros, floor,exp,sqrt,dot,arange,
                     hanning,sin, pi,linspace,log10,round,maximum,minimum,
                     sum,cos,spacing,diag,ceil)
 
+@jit
 def lpc_ref(signal, order):
     """Compute the Linear Prediction Coefficients.
 
@@ -52,6 +55,7 @@ def lpc_ref(signal, order):
     else:
         return np.ones(1, dtype = signal.dtype)
 
+@jit
 def levinson_1d(r, order):
     """Levinson-Durbin recursion, to efficiently solve symmetric linear systems
     with toeplitz structure.
@@ -124,10 +128,13 @@ def levinson_1d(r, order):
     return a, e, k
 
 
+@jit
 def _acorr_last_axis(x, nfft, maxlag):
     a = np.real(ifft(np.abs(fft(x, n=nfft) ** 2)))
     return a[..., :maxlag+1] / x.shape[-1]
 
+
+@jit
 def acorr_lpc(x, axis=-1):
     """Compute autocorrelation of x along the given axis.
 
@@ -150,6 +157,7 @@ def acorr_lpc(x, axis=-1):
         a = np.swapaxes(a, -1, axis)
     return a
 
+@jit
 def lpc(signal, order, axis=-1):
     """Compute the Linear Prediction Coefficients.
 
@@ -224,6 +232,53 @@ class Formants(Representation):
                 output[i,:] = [x[1] for x in self._rep[t]]
         return output
 
+@jit
+def process_frame(X, window, num_formants, new_sr):
+    X = X * window
+    A, e, k  = lpc(X, num_formants*2)
+
+    rts = np.roots(A)
+    rts = rts[np.where(np.imag(rts) >= 0)]
+    angz = np.arctan2(np.imag(rts), np.real(rts))
+    frqs = angz * (new_sr / (2 * np.pi))
+    frq_inds = np.argsort(frqs)
+    frqs = frqs[frq_inds]
+    bw = -1/2*(new_sr/(2*np.pi))*np.log(np.abs(rts[frq_inds]))
+    return frqs, bw
+
+@jit
+def do_formants(filepath, freq_lims, win_len, time_step, num_formants, window_shape = 'gaussian'):
+    rep = {}
+    new_sr = 2 *freq_lims[1]
+    alpha = np.exp(-2 * np.pi * 50 * (1/new_sr))
+    sr, proc = preproc(filepath,alpha=alpha)
+    proc = resample(proc, sr, new_sr)
+    nperseg = int(win_len*new_sr)
+    nperstep = int(time_step*new_sr)
+
+    if window_shape == 'gaussian':
+        window = gaussian(nperseg+2,0.45*(nperseg-1)/2)[1:nperseg+1]
+    else:
+        window = hanning(nperseg+2)[1:nperseg+1]
+    indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2) + 1, nperstep)
+    num_frames = len(indices)
+
+    for i in range(num_frames):
+        X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
+        frqs, bw = process_frame(X, window, num_formants, new_sr)
+        formants = []
+        for j,f in enumerate(frqs):
+            if f < 50:
+                continue
+            if f > freq_lims[1] - 50:
+                continue
+            formants.append((f,bw[j]))
+        missing = num_formants - len(formants)
+        if missing:
+            formants += [(None,None)] * missing
+        rep[indices[i]/new_sr] = formants
+    return rep
+
 class LpcFormants(Formants):
 
     def __init__(self, filepath,max_freq, num_formants, win_len,
@@ -233,46 +288,6 @@ class LpcFormants(Formants):
         self.process()
 
     def process(self):
-        self._rep = dict()
-        new_sr = 2 *self._freq_lims[1]
-        alpha = np.exp(-2 * np.pi * 50 * (1/new_sr))
-        self._sr, proc = preproc(self._filepath,alpha=alpha)
-        proc = resample(proc,int(ceil(proc.shape[0]/(self._sr/new_sr))))
-        nperseg = int(self._win_len*new_sr)
-        nperstep = int(self._time_step*new_sr)
-
-        if self._window_shape == 'gaussian':
-            window = gaussian(nperseg+2,0.45*(nperseg-1)/2)[1:nperseg+1]
-        else:
-            window = hanning(nperseg+2)[1:nperseg+1]
-        indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2) + 1, nperstep)
-        num_frames = len(indices)
-
-        formants = zeros((num_frames,self._num_formants))
-        for i in range(num_frames):
-            X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
-            X = X * window
-            A, e, k  = lpc(X,self._num_formants*2)
-
-            rts = np.roots(A)
-            rts = np.array([r for r in rts if np.imag(r) >= 0])
-            angz = np.arctan2(np.imag(rts), np.real(rts))
-            frqs = angz * (new_sr / (2 * np.pi))
-            frq_inds = np.argsort(frqs)
-            frqs = frqs[frq_inds]
-            #print(frqs)
-            bw = -1/2*(new_sr/(2*np.pi))*np.log(np.abs(rts[frq_inds]))
-            formants = list()
-            for j,f in enumerate(frqs):
-                if f < 50:
-                    continue
-                if f > self._freq_lims[1] - 50:
-                    continue
-                formants.append((f,bw[j]))
-            missing = self._num_formants - len(formants)
-            if missing:
-                formants += [(None,None)] * missing
-            self._rep[indices[i]/new_sr] = formants
-            #raise(ValueError)
-
-
+        self._rep = do_formants(self._filepath, self._freq_lims,
+                        self._win_len, self._time_step,
+                        self._num_formants, self._window_shape)
