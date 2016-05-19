@@ -9,9 +9,11 @@ branches:
 notifications:
   email: false
 
-sudo: false
+sudo: true
 
 before_install:
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
   - bash continuous-integration/travis/install.sh
 
 # Install packages
