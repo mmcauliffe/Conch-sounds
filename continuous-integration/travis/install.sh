@@ -11,9 +11,9 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment$TRAVIS_PYTHON_VERSION
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
-  conda create -q -n "test-environment$TRAVIS_PYTHON_VERSION" python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest scikit-learn networkx setuptools=18.1
+  conda create -q -n "test-environment$TRAVIS_PYTHON_VERSION" python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest scikit-learn networkx setuptools numba
   source activate "test-environment$TRAVIS_PYTHON_VERSION"
-  pip install -q textgrid coveralls coverage
+  pip install -q textgrid coveralls coverage librosa
 else
   echo "Miniconda already installed."
 fi
