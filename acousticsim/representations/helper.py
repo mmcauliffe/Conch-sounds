@@ -41,8 +41,7 @@ def preproc(path,sr=16000,alpha=0.95):
 
     """
     oldsr,sig = wavfile.read(path)
-    #if oldsr != 16000:
-#       raise(E
+
     try:
         sig = sig[:,0]
     except IndexError:

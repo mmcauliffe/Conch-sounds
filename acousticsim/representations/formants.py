@@ -6,6 +6,7 @@ from numba import jit
 import numpy as np
 import scipy as sp
 import scipy.signal as sig
+from scipy.signal import lfilter
 
 from scipy.fftpack import fft,ifft
 from scipy.signal import gaussian
@@ -129,7 +130,7 @@ def levinson_1d(r, order):
 
 @jit
 def _acorr_last_axis(x, nfft, maxlag):
-    a = np.real(ifft(np.abs(fft(x, n=nfft) ** 2)))
+    a = np.real(ifft(np.abs(fft(x, n = nfft) ** 2)))
     return a[..., :maxlag+1] / x.shape[-1]
 
 
@@ -242,28 +243,28 @@ def process_frame(X, window, num_formants, new_sr):
     frqs = angz * (new_sr / (2 * np.pi))
     frq_inds = np.argsort(frqs)
     frqs = frqs[frq_inds]
-    bw = -1/2*(new_sr/(2*np.pi))*np.log(np.abs(rts[frq_inds]))
+    bw = -1 / 2 * (new_sr / (2 * np.pi)) * np.log(np.abs(rts[frq_inds]))
     return frqs, bw
 
 @jit
-def do_formants(filepath, freq_lims, win_len, time_step, num_formants, window_shape = 'gaussian'):
+def signal_to_formants(signal, sr, freq_lims, win_len, time_step, num_formants, window_shape = 'gaussian', begin = None):
     rep = {}
-    new_sr = 2 *freq_lims[1]
-    alpha = np.exp(-2 * np.pi * 50 * (1/new_sr))
-    sr, proc = preproc(filepath,alpha=alpha)
+    new_sr = 2 * freq_lims[1]
+    alpha = np.exp(-2 * np.pi * 50 * (1 / new_sr))
+    proc = lfilter([1., -alpha], 1, signal)
     proc = resample(proc, sr, new_sr)
     nperseg = int(win_len*new_sr)
     nperstep = int(time_step*new_sr)
 
     if window_shape == 'gaussian':
-        window = gaussian(nperseg+2,0.45*(nperseg-1)/2)[1:nperseg+1]
+        window = gaussian(nperseg + 2, 0.45 * (nperseg - 1) / 2)[1:nperseg + 1]
     else:
-        window = hanning(nperseg+2)[1:nperseg+1]
-    indices = arange(int(nperseg/2), proc.shape[0] - int(nperseg/2) + 1, nperstep)
+        window = hanning(nperseg + 2)[1:nperseg+1]
+    indices = arange(int(nperseg / 2), proc.shape[0] - int(nperseg / 2) + 1, nperstep)
     num_frames = len(indices)
 
     for i in range(num_frames):
-        X = proc[indices[i]-int(nperseg/2):indices[i]+int(nperseg/2)]
+        X = proc[indices[i] - int(nperseg / 2):indices[i] + int(nperseg / 2)]
         frqs, bw = process_frame(X, window, num_formants, new_sr)
         formants = []
         for j,f in enumerate(frqs):
@@ -271,11 +272,23 @@ def do_formants(filepath, freq_lims, win_len, time_step, num_formants, window_sh
                 continue
             if f > freq_lims[1] - 50:
                 continue
-            formants.append((f,bw[j]))
+            formants.append((f, bw[j]))
         missing = num_formants - len(formants)
         if missing:
             formants += [(None,None)] * missing
         rep[indices[i]/new_sr] = formants
+    if begin is not None:
+        real_output = {}
+        for k,v in rep.items():
+            real_output[k+begin] = v
+        return real_output
+    return rep
+
+@jit
+def do_formants(filepath, freq_lims, win_len, time_step, num_formants, window_shape = 'gaussian'):
+    sr, proc = preproc(filepath,alpha=None)
+
+    rep = signal_to_formants(proc, sr, freq_lims, win_len, time_step, num_formants, window_shape)
     return rep
 
 class LpcFormants(Formants):
