@@ -22,7 +22,6 @@ def file_to_pitch_reaper(filepath, reaper = None, time_step = None,
         com.extend(['-m', str(freq_lims[0]), '-x', str(freq_lims[1])])
     with open(os.devnull, 'w') as devnull:
         subprocess.call(com, stdout=devnull, stderr=devnull)
-    shutil.copy(output_path, r'D:/t.txt')
     output = Pitch(filepath, time_step, freq_lims, attributes = attributes)
     output.rep = parse_output(output_path)
     os.remove(output_path)
