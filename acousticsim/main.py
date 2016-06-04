@@ -3,6 +3,7 @@ from multiprocessing import cpu_count
 from collections import OrderedDict
 
 import librosa
+from scipy.io import wavfile
 from functools import partial
 
 from numpy import zeros
@@ -331,7 +332,7 @@ def analyze_single_file(path, output_path,**kwargs):
         extract_wav(path,os.path.join(output_path,'%d.wav' % i),begin_time,end_time)
         begin = s+1
 
-def create_sig_dict(path, segments):
+def create_sig_dict(path, segments, padding = None):
     sig, sr = librosa.load(path, sr = None, mono = False)
     if len(sig.shape) > 1:
         channels = sig.shape[1]
@@ -340,8 +341,16 @@ def create_sig_dict(path, segments):
         channels = 1
     data = OrderedDict()
     for s in segments:
-        begin = int(sr * s[0])
-        end = int(sr * s[1])
+        b = s[0]
+        e = s[1]
+        if padding is not None:
+            b -= padding
+            if b < 0:
+                b = 0
+            e += padding
+        begin = int(sr * b)
+
+        end = int(sr * e)
         if channels > 1 and len(s) > 2:
             data[s] = sig[begin:end, s[2]]
         else:
@@ -349,12 +358,15 @@ def create_sig_dict(path, segments):
     del sig
     return data, sr
 
-def analyze_long_file(path, segments, function, num_jobs = None, channel = 0, call_back = None, stop_check = None):
-    data, sr = create_sig_dict(path, segments)
-    function = partial(function, sr = sr)
+def analyze_long_file(path, segments, function,
+                num_jobs = None, channel = 0, padding = None,
+                call_back = None, stop_check = None):
+    data, sr = create_sig_dict(path, segments, padding)
+    function = partial(function, sr = sr, padding = padding)
     if num_jobs is None:
         num_cores = int((3*cpu_count())/4)
     else:
         num_cores = num_jobs
-    output_dict = generate_cache_sig_dict(data, function, num_cores, call_back, stop_check)
+    output_dict = generate_cache_sig_dict(data, function, num_cores,
+                                        call_back, stop_check)
     return output_dict

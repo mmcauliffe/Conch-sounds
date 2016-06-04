@@ -247,7 +247,9 @@ def process_frame(X, window, num_formants, new_sr):
     return frqs, bw
 
 @jit
-def signal_to_formants(signal, sr, freq_lims, win_len, time_step, num_formants, window_shape = 'gaussian', begin = None):
+def signal_to_formants(signal, sr, freq_lims, win_len,
+                    time_step, num_formants, window_shape = 'gaussian',
+                    begin = None, padding = None):
     rep = {}
     new_sr = 2 * freq_lims[1]
     alpha = np.exp(-2 * np.pi * 50 * (1 / new_sr))
@@ -277,9 +279,15 @@ def signal_to_formants(signal, sr, freq_lims, win_len, time_step, num_formants, 
         if missing:
             formants += [(None,None)] * missing
         rep[indices[i]/new_sr] = formants
+
+    duration = signal.shape[0] / sr
     if begin is not None:
+        if padding is not None:
+            begin -= padding
         real_output = {}
         for k,v in rep.items():
+            if padding is not None and (k < padding or k > duration - padding):
+                continue
             real_output[k+begin] = v
         return real_output
     return rep

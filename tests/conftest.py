@@ -73,7 +73,7 @@ def praatpath():
 def reaperpath():
     if os.environ.get('TRAVIS'):
         return os.path.join(os.environ.get('HOME'),'tools','reaper')
-    return r'D:\Dev\Tools\REAPER-master\reaper.exe'
+    return r'D:\Dev\Tools\bin\reaper.exe'
 
 @pytest.fixture(scope='session')
 def reaper_func(reaperpath):

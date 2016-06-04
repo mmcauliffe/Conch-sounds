@@ -22,7 +22,30 @@ def test_analyze_directory(soundfiles_dir, call_back):
 def test_analyze_long_file_reaper(acoustic_corpus_path, reaper_func):
     segments = [(1, 2, 0)]
     output = analyze_long_file(acoustic_corpus_path, segments, reaper_func)
+    print(sorted(output[(1, 2, 0)].keys()))
+    assert(all(x >= 1 for x in output[(1, 2, 0)].keys()))
+    assert(all(x <= 2 for x in output[(1, 2, 0)].keys()))
+    assert(all(x >= 1 for x in output[(1, 2, 0)].keys()))
+    assert(all(x <= 2 for x in output[(1, 2, 0)].keys()))
+
+    output = analyze_long_file(acoustic_corpus_path, segments, reaper_func, padding = 0.5)
+    print(sorted(output[(1, 2, 0)].keys()))
+    assert(all(x >= 1 for x in output[(1, 2, 0)].keys()))
+    assert(all(x <= 2 for x in output[(1, 2, 0)].keys()))
+    assert(all(x >= 1 for x in output[(1, 2, 0)].keys()))
+    assert(all(x <= 2 for x in output[(1, 2, 0)].keys()))
 
 def test_analyze_long_file_formants(acoustic_corpus_path, formants_func):
     segments = [(1, 2, 0)]
     output = analyze_long_file(acoustic_corpus_path, segments, formants_func)
+    print(sorted(output[(1, 2, 0)].keys()))
+    assert(all(x >= 1 for x in output[(1, 2, 0)].keys()))
+    assert(all(x <= 2 for x in output[(1, 2, 0)].keys()))
+    assert(all(x >= 1 for x in output[(1, 2, 0)].keys()))
+    assert(all(x <= 2 for x in output[(1, 2, 0)].keys()))
+    output = analyze_long_file(acoustic_corpus_path, segments, formants_func, padding = 0.5)
+    print(sorted(output[(1, 2, 0)].keys()))
+    assert(all(x >= 1 for x in output[(1, 2, 0)].keys()))
+    assert(all(x <= 2 for x in output[(1, 2, 0)].keys()))
+    assert(all(x >= 1 for x in output[(1, 2, 0)].keys()))
+    assert(all(x <= 2 for x in output[(1, 2, 0)].keys()))
