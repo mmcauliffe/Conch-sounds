@@ -8,6 +8,7 @@ from acousticsim.representations.base import Representation
 from acousticsim.representations.reaper import signal_to_pitch_reaper
 
 from acousticsim.representations.formants import signal_to_formants
+from acousticsim.representations.pitch import signal_to_pitch
 
 from functools import partial
 
@@ -84,6 +85,11 @@ def reaper_func(reaperpath):
 def formants_func():
     return partial(signal_to_formants, freq_lims = (0, 5000), time_step = 0.01, num_formants = 5,
                                         win_len = 0.025, window_shape = 'gaussian')
+
+@pytest.fixture(scope='session')
+def pitch_func():
+    return partial(signal_to_pitch, freq_lims = (50, 500), time_step = 0.01,
+                                        window_shape = 'gaussian')
 
 @pytest.fixture(scope='session')
 def reps_for_distance():

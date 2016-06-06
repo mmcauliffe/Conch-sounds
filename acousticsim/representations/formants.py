@@ -1,4 +1,5 @@
 
+import librosa
 
 from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc,nextpow2
@@ -292,12 +293,11 @@ def signal_to_formants(signal, sr, freq_lims, win_len,
         return real_output
     return rep
 
-@jit
-def do_formants(filepath, freq_lims, win_len, time_step, num_formants, window_shape = 'gaussian'):
-    sr, proc = preproc(filepath,alpha=None)
+def file_to_formants(filepath, freq_lims, win_len, time_step, num_formants, window_shape = 'gaussian'):
+    sig, sr = librosa.load(filepath, sr = None, mono = False)
 
-    rep = signal_to_formants(proc, sr, freq_lims, win_len, time_step, num_formants, window_shape)
-    return rep
+    output = signal_to_formants(sig, sr, freq_lims, win_len, time_step, num_formants, window_shape)
+    return output
 
 class LpcFormants(Formants):
 
@@ -308,6 +308,6 @@ class LpcFormants(Formants):
         self.process()
 
     def process(self):
-        self._rep = do_formants(self._filepath, self._freq_lims,
+        self._rep = file_to_formants(self._filepath, self._freq_lims,
                         self._win_len, self._time_step,
                         self._num_formants, self._window_shape)

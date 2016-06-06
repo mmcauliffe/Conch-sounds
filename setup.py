@@ -56,6 +56,7 @@ if __name__ == '__main__':
             'scikit-learn',
             'networkx',
             'textgrid',
+            'librosa'
       ],
     cmdclass={'test': PyTest},
     extras_require={
