@@ -1,4 +1,5 @@
 import sys
+import os
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
@@ -14,7 +15,9 @@ def readme():
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
-        self.test_args = ['--strict', '--verbose', '--tb=long', 'tests']
+        self.test_args = ['--strict', '--verbose', '-x', '--tb=long', 'tests']
+        if os.environ.get('TRAVIS', False):
+            self.test_args.insert(0, '--runslow')
         self.test_suite = True
 
     def run_tests(self):
@@ -23,7 +26,8 @@ class PyTest(TestCommand):
             errcode = pytest.main(self.test_args)
             sys.exit(errcode)
 
-setup(name='acousticsim',
+if __name__ == '__main__':
+    setup(name='acousticsim',
       version=acousticsim.__version__,
       description = 'Analyze acoustic similarity in Python',
       classifiers=[
@@ -52,6 +56,7 @@ setup(name='acousticsim',
             'scikit-learn',
             'networkx',
             'textgrid',
+            'librosa'
       ],
     cmdclass={'test': PyTest},
     extras_require={

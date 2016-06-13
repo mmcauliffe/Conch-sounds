@@ -86,6 +86,34 @@ class RepWorker(Process):
 
         return
 
+class SigRepWorker(Process):
+    def __init__(self, job_q, return_dict, rep_func, counter, stopped):
+        Process.__init__(self)
+        self.job_q = job_q
+        self.return_dict = return_dict
+        self.function = rep_func
+        self.counter = counter
+        self.stopped = stopped
+
+    def run(self):
+        while True:
+            self.counter.increment()
+            try:
+                key, sig = self.job_q.get(timeout=1)
+            except Empty:
+                break
+            self.job_q.task_done()
+            if self.stopped.stop_check():
+                continue
+            try:
+                rep = self.function(signal = sig, begin = key[0])
+                self.return_dict[key] = rep
+            except Exception as e:
+                self.stopped.stop()
+                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
+
+        return
+
 class DistWorker(Process):
     def __init__(self, job_q, return_dict, counter, dist_func, output_sim, axb, cache, stopped):
         Process.__init__(self)
@@ -137,6 +165,52 @@ class DistWorker(Process):
                 self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
 
         return
+
+def generate_cache_sig_dict(sig_dict, rep_func, num_procs, call_back, stop_check):
+    stopped = Stopped()
+    job_queue = JoinableQueue(100)
+    sig_ind = 0
+    all_sigs = sorted(sig_dict.items(), key = lambda x: x[0])
+    while True:
+        if sig_ind == len(all_sigs):
+            break
+        try:
+            job_queue.put(all_sigs[sig_ind], False)
+        except Full:
+            break
+        sig_ind += 1
+    manager = Manager()
+    return_dict = manager.dict()
+    procs = []
+
+    counter = Counter()
+    for i in range(num_procs):
+        p = SigRepWorker(job_queue, return_dict, rep_func, counter, stopped)
+        procs.append(p)
+        p.start()
+    if call_back is not None:
+        call_back('Generating representations...')
+
+    while True:
+        if sig_ind == len(all_sigs):
+            break
+        if stop_check is not None and stop_check():
+            stopped.stop()
+            time.sleep(1)
+            break
+        job_queue.put(all_sigs[sig_ind])
+
+        if call_back is not None:
+            value = counter.value()
+            call_back(value)
+        sig_ind += 1
+    job_queue.join()
+
+    for p in procs:
+        p.join()
+    if 'error' in return_dict:
+        raise(return_dict['error'])
+    return return_dict
 
 def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
 

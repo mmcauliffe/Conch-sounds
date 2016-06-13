@@ -5,6 +5,18 @@ import os
 from acousticsim.utils import concatenate_files
 from acousticsim.representations.base import Representation
 
+from acousticsim.representations.reaper import signal_to_pitch_reaper
+
+from acousticsim.representations.formants import signal_to_formants
+from acousticsim.representations.pitch import signal_to_pitch
+
+from functools import partial
+
+
+def pytest_addoption(parser):
+    parser.addoption("--runslow", action="store_true",
+        help="run slow tests")
+
 @pytest.fixture(scope='session')
 def do_long_tests():
     if os.environ.get('TRAVIS'):
@@ -26,6 +38,10 @@ def noise_path(soundfiles_dir):
 @pytest.fixture(scope = 'session')
 def y_path(soundfiles_dir):
     return os.path.join(soundfiles_dir, 'vowel_y_16k.wav')
+
+@pytest.fixture(scope = 'session')
+def acoustic_corpus_path(soundfiles_dir):
+    return os.path.join(soundfiles_dir, 'acoustic_corpus.wav')
 
 @pytest.fixture(scope='session')
 def call_back():
@@ -58,7 +74,22 @@ def praatpath():
 def reaperpath():
     if os.environ.get('TRAVIS'):
         return os.path.join(os.environ.get('HOME'),'tools','reaper')
-    return r'D:\Dev\Tools\REAPER-master\reaper.exe'
+    return r'D:\Dev\Tools\bin\reaper.exe'
+
+@pytest.fixture(scope='session')
+def reaper_func(reaperpath):
+    return partial(signal_to_pitch_reaper, reaper = reaperpath, time_step = 0.01,
+                                        freq_lims = (50,500))
+
+@pytest.fixture(scope='session')
+def formants_func():
+    return partial(signal_to_formants, freq_lims = (0, 5000), time_step = 0.01, num_formants = 5,
+                                        win_len = 0.025, window_shape = 'gaussian')
+
+@pytest.fixture(scope='session')
+def pitch_func():
+    return partial(signal_to_pitch, freq_lims = (50, 500), time_step = 0.01,
+                                        window_shape = 'gaussian')
 
 @pytest.fixture(scope='session')
 def reps_for_distance():

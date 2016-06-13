@@ -2,6 +2,10 @@ import os
 from multiprocessing import cpu_count
 from collections import OrderedDict
 
+import librosa
+from scipy.io import wavfile
+from functools import partial
+
 from numpy import zeros
 
 from acousticsim.representations import Envelopes, Mfcc
@@ -9,7 +13,7 @@ from acousticsim.representations import Envelopes, Mfcc
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
 from acousticsim.exceptions import AcousticSimError,NoWavError
-from acousticsim.multiprocessing import generate_cache, calc_asim
+from acousticsim.multiprocessing import generate_cache, calc_asim, generate_cache_sig_dict
 from acousticsim.helper import _build_to_rep, load_attributes
 
 def acoustic_similarity_mapping(path_mapping, **kwargs):
@@ -325,6 +329,44 @@ def analyze_single_file(path, output_path,**kwargs):
     for i, s in enumerate(segs):
         begin_time = begin * time_step
         end_time = (s+1) * time_step
-        extract_wav(path,os.path.join(output_path,'%d.wav'%i),begin_time,end_time)
+        extract_wav(path,os.path.join(output_path,'%d.wav' % i),begin_time,end_time)
         begin = s+1
 
+def create_sig_dict(path, segments, padding = None):
+    sig, sr = librosa.load(path, sr = None, mono = False)
+    if len(sig.shape) > 1:
+        channels = sig.shape[1]
+        sig = sig.T
+    else:
+        channels = 1
+    data = OrderedDict()
+    for s in segments:
+        b = s[0]
+        e = s[1]
+        if padding is not None:
+            b -= padding
+            if b < 0:
+                b = 0
+            e += padding
+        begin = int(sr * b)
+
+        end = int(sr * e)
+        if channels > 1 and len(s) > 2:
+            data[s] = sig[begin:end, s[2]]
+        else:
+            data[s] = sig[begin:end]
+    del sig
+    return data, sr
+
+def analyze_long_file(path, segments, function,
+                num_jobs = None, channel = 0, padding = None,
+                call_back = None, stop_check = None):
+    data, sr = create_sig_dict(path, segments, padding)
+    function = partial(function, sr = sr, padding = padding)
+    if num_jobs is None:
+        num_cores = int((3*cpu_count())/4)
+    else:
+        num_cores = num_jobs
+    output_dict = generate_cache_sig_dict(data, function, num_cores,
+                                        call_back, stop_check)
+    return output_dict
