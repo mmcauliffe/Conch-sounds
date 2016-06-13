@@ -254,7 +254,7 @@ def signal_to_formants(signal, sr, freq_lims, win_len,
         window = gaussian(nperseg + 2, 0.45 * (nperseg - 1) / 2)[1:nperseg + 1]
     else:
         window = hanning(nperseg + 2)[1:nperseg+1]
-    indices = arange(int(nperseg / 2), proc.shape[0] - int(nperseg / 2) + 1, nperstep)
+    indices = np.arange(int(nperseg / 2), proc.shape[0] - int(nperseg / 2) + 1, nperstep)
     num_frames = len(indices)
     for i in range(num_frames):
         if nperseg % 2 != 0:
