@@ -1,10 +1,15 @@
 
 import wave
 import numpy as np
+from scipy.io import wavfile
 
 from .representations.helper import preproc
 
 from .exceptions import AcousticSimError
+
+def write_wav(signal, sr, filepath):
+    signal *= 32768
+    wavfile.write(filepath, sr, signal.astype('int16'))
 
 def extract_audio(filepath, outpath, begin, end, padding = 0.1):
     begin -= padding

@@ -1,9 +1,8 @@
 
 import librosa
-
+import numpy
 from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc,nextpow2
-from numba import jit
 import numpy as np
 import scipy as sp
 import scipy.signal as sig
@@ -11,11 +10,6 @@ from scipy.signal import lfilter
 
 from scipy.fftpack import fft,ifft
 from scipy.signal import gaussian
-
-from librosa import resample
-from numpy import (pad,log,array,zeros, floor,exp,sqrt,dot,arange,
-                    hanning,sin, pi,linspace,log10,round,maximum,minimum,
-                    sum,cos,spacing,diag,ceil)
 
 def lpc_ref(signal, order):
     """Compute the Linear Prediction Coefficients.
@@ -45,7 +39,7 @@ def lpc_ref(signal, order):
 
     if order > 0:
         p = order + 1
-        r = np.zeros(p, signal.dtype)
+        r = np.zeros(p, 'float32')
         # Number of non zero values in autocorrelation one needs for p LPC
         # coefficients
         nx = np.min([p, signal.size])
@@ -54,9 +48,9 @@ def lpc_ref(signal, order):
         phi = np.dot(sp.linalg.inv(sp.linalg.toeplitz(r[:-1])), -r[1:])
         return np.concatenate(([1.], phi))
     else:
-        return np.ones(1, dtype = signal.dtype)
+        return np.ones(1, dtype = 'float32')
 
-@jit
+#@jit
 def levinson_1d(r, order):
     """Levinson-Durbin recursion, to efficiently solve symmetric linear systems
     with toeplitz structure.
@@ -102,11 +96,11 @@ def levinson_1d(r, order):
         raise ValueError("First item should be != 0")
 
     # Estimated coefficients
-    a = np.empty(order+1, r.dtype)
+    a = np.empty(order+1, 'float32')
     # temporary array
-    t = np.empty(order+1, r.dtype)
+    t = np.empty(order+1, 'float32')
     # Reflection coefficients
-    k = np.empty(order, r.dtype)
+    k = np.empty(order, 'float32')
 
     a[0] = 1.
     e = r[0]
@@ -128,14 +122,12 @@ def levinson_1d(r, order):
 
     return a, e, k
 
-
-@jit
+#@jit
 def _acorr_last_axis(x, nfft, maxlag):
     a = np.real(ifft(np.abs(fft(x, n = nfft) ** 2)))
     return a[..., :maxlag+1] / x.shape[-1]
 
-
-@jit
+#@jit
 def acorr_lpc(x, axis=-1):
     """Compute autocorrelation of x along the given axis.
 
@@ -149,7 +141,7 @@ def acorr_lpc(x, axis=-1):
         raise ValueError("Complex input not supported yet")
 
     maxlag = x.shape[axis]
-    nfft = 2 ** nextpow2(2 * maxlag - 1)
+    nfft = int(2 ** nextpow2(2 * maxlag - 1))
 
     if axis != -1:
         x = np.swapaxes(x, -1, axis)
@@ -158,7 +150,7 @@ def acorr_lpc(x, axis=-1):
         a = np.swapaxes(a, -1, axis)
     return a
 
-@jit
+#@jit
 def lpc(signal, order, axis=-1):
     """Compute the Linear Prediction Coefficients.
 
@@ -215,7 +207,7 @@ class Formants(Representation):
 
     def __getitem__(self,key):
         item = Representation.__getitem__(self, key)
-        return np.array([x[0] for x in item], dtype = np.float32)
+        return np.array([x[0] for x in item], dtype = 'float32')
 
     def to_array(self, value='formant'):
         times = sorted(self._rep.keys())
@@ -233,7 +225,7 @@ class Formants(Representation):
                 output[i,:] = [x[1] for x in self._rep[t]]
         return output
 
-@jit
+#@jit
 def process_frame(X, window, num_formants, new_sr):
     X = X * window
     A, e, k  = lpc(X, num_formants*2)
@@ -247,7 +239,7 @@ def process_frame(X, window, num_formants, new_sr):
     bw = -1 / 2 * (new_sr / (2 * np.pi)) * np.log(np.abs(rts[frq_inds]))
     return frqs, bw
 
-@jit
+#@jit
 def signal_to_formants(signal, sr, freq_lims, win_len,
                     time_step, num_formants, window_shape = 'gaussian',
                     begin = None, padding = None):
@@ -255,19 +247,20 @@ def signal_to_formants(signal, sr, freq_lims, win_len,
     new_sr = 2 * freq_lims[1]
     alpha = np.exp(-2 * np.pi * 50 * (1 / new_sr))
     proc = lfilter([1., -alpha], 1, signal)
-    proc = resample(proc, sr, new_sr)
+    proc = librosa.resample(proc, sr, new_sr)
     nperseg = int(win_len*new_sr)
     nperstep = int(time_step*new_sr)
-
     if window_shape == 'gaussian':
         window = gaussian(nperseg + 2, 0.45 * (nperseg - 1) / 2)[1:nperseg + 1]
     else:
         window = hanning(nperseg + 2)[1:nperseg+1]
     indices = arange(int(nperseg / 2), proc.shape[0] - int(nperseg / 2) + 1, nperstep)
     num_frames = len(indices)
-
     for i in range(num_frames):
-        X = proc[indices[i] - int(nperseg / 2):indices[i] + int(nperseg / 2)]
+        if nperseg % 2 != 0:
+            X = proc[indices[i] - int(nperseg / 2):indices[i] + int(nperseg / 2) + 1]
+        else:
+            X = proc[indices[i] - int(nperseg / 2):indices[i] + int(nperseg / 2)]
         frqs, bw = process_frame(X, window, num_formants, new_sr)
         formants = []
         for j,f in enumerate(frqs):
@@ -275,7 +268,7 @@ def signal_to_formants(signal, sr, freq_lims, win_len,
                 continue
             if f > freq_lims[1] - 50:
                 continue
-            formants.append((f, bw[j]))
+            formants.append((np.asscalar(f), np.asscalar(bw[j])))
         missing = num_formants - len(formants)
         if missing:
             formants += [(None,None)] * missing
@@ -289,7 +282,8 @@ def signal_to_formants(signal, sr, freq_lims, win_len,
         for k,v in rep.items():
             if padding is not None and (k < padding or k > duration - padding):
                 continue
-            real_output[k+begin] = v
+            t = np.asscalar(k+begin)
+            real_output[t] = v
         return real_output
     return rep
 
