@@ -1,6 +1,5 @@
 
 import librosa
-import numpy
 from acousticsim.representations.base import Representation
 from acousticsim.representations.helper import preproc,nextpow2
 import numpy as np

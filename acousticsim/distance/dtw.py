@@ -2,9 +2,9 @@ from numpy import zeros,inf, ones
 import numpy as np
 from scipy.spatial.distance import euclidean
 import operator
-from numba import jit
+#from numba import jit
 
-@jit
+#@jit
 def dtw_distance(rep_one, rep_two,norm=True):
     """Computes the distance between two representations with the same
     number of filters using Dynamic Time Warping.
@@ -32,7 +32,7 @@ def dtw_distance(rep_one, rep_two,norm=True):
     distMat = generate_distance_matrix(rep_one,rep_two)
     return regularDTW(distMat,norm=norm)
 
-@jit
+#@jit
 def generate_distance_matrix(source,target, weights = None):
     """Generates a local distance matrix for use in dynamic time warping.
 
@@ -59,7 +59,7 @@ def generate_distance_matrix(source,target, weights = None):
             distMat[i,j] = euclidean(source[i,:],target[j,:])
     return distMat
 
-@jit
+#@jit
 def regularDTW(distMat,norm=True):
     """Use a local distance matrix to perform dynamic time warping.
 
