@@ -3,7 +3,7 @@ python-acoustic-similarity
 
 [![Build Status](https://travis-ci.org/mmcauliffe/python-acoustic-similarity.svg?branch=master)](https://travis-ci.org/mmcauliffe/python-acoustic-similarity)[![Coverage Status](https://coveralls.io/repos/mmcauliffe/python-acoustic-similarity/badge.svg)](https://coveralls.io/r/mmcauliffe/python-acoustic-similarity)
 [![PyPI version](https://badge.fury.io/py/acousticsim.svg)](https://badge.fury.io/py/acousticsim)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.154443.svg)](https://doi.org/10.5281/zenodo.154443)
+[![DOI](https://zenodo.org/badge/9966944.svg)](https://zenodo.org/badge/latestdoi/9966944)
 
 This package contains functions for converting wav files into auditory 
 representations and calculating distance between them.
