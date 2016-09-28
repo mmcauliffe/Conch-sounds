@@ -15,7 +15,7 @@ from acousticsim.representations.mfcc import Mfcc, freq_to_mel
 
 from acousticsim.exceptions import AcousticSimPraatError
 
-def to_pitch_praat(filepath, praatpath = None, time_step = 0.01, freq_lims = (75, 600), attributes = None, **kwargs):
+def file_to_pitch_praat(filepath, praatpath = None, time_step = 0.01, freq_lims = (75, 600), attributes = None, **kwargs):
     script = 'pitch.praat'
     if praatpath is None:
         praatpath = 'praat'
@@ -38,7 +38,7 @@ def signal_to_pitch_praat(signal, sr, praatpath = None,
         signal *= 32768
         wavfile.write(t_wav, sr, signal.astype('int16'))
         t_wav.close()
-        output = to_pitch_praat(t_wav.name, praatpath, time_step, freq_lims,
+        output = file_to_pitch_praat(t_wav.name, praatpath, time_step, freq_lims,
                                         attributes)
     duration = signal.shape[0] / sr
     if begin is not None:
@@ -52,7 +52,7 @@ def signal_to_pitch_praat(signal, sr, praatpath = None,
         return real_output
     return output
 
-def to_formants_praat(filepath, praatpath = None, time_step = 0.01,
+def file_to_formants_praat(filepath, praatpath = None, time_step = 0.01,
                     win_len = 0.025, num_formants = 5, max_freq = 5000, attributes = None, **kwargs):
     script = 'formants.praat'
     listing = run_script(praatpath, script, filepath, time_step,
@@ -71,7 +71,7 @@ def to_formants_praat(filepath, praatpath = None, time_step = 0.01,
     output.rep = r
     return output
 
-def to_intensity_praat(filepath, praatpath = None, time_step = 0.01, attributes = None, **kwargs):
+def file_to_intensity_praat(filepath, praatpath = None, time_step = 0.01, attributes = None, **kwargs):
     script = 'intensity.praat'
     listing = run_script(praatpath, script, filepath, time_step)
     output = Intensity(filepath, time_step, attributes = attributes)
@@ -81,7 +81,7 @@ def to_intensity_praat(filepath, praatpath = None, time_step = 0.01, attributes 
     output.rep = r
     return output
 
-def to_mfcc_praat(filepath, praatpath = None, num_coeffs = 12,
+def file_to_mfcc_praat(filepath, praatpath = None, num_coeffs = 12,
                 win_len = 0.025, time_step = 0.01, max_freq = 7800,
                 use_power = False, attributes = None,  **kwargs):
     script = 'mfcc.praat'

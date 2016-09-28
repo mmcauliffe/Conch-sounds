@@ -78,8 +78,8 @@ class RepWorker(Process):
             true_label = os.path.split(path)[1]
             try:
                 rep = self.function(filename,attributes=att)
-                rep._true_label = true_label
-                self.return_dict[os.path.split(filename)[1]] = rep
+                #rep._true_label = true_label
+                self.return_dict[filename] = rep
             except Exception as e:
                 self.stopped.stop()
                 self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))

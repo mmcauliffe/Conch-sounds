@@ -25,7 +25,8 @@ def do_long_tests():
 
 @pytest.fixture(scope = 'session')
 def test_dir():
-    return os.path.abspath('tests/data')
+    base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, 'data') #was tests/data
 
 @pytest.fixture(scope = 'session')
 def soundfiles_dir(test_dir):

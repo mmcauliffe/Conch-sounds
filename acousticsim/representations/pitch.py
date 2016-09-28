@@ -109,7 +109,7 @@ def find_best_path(candidate_matrix):
             state = y
     return path[state]
 
-def signal_to_pitch(signal, sr, freq_lims, time_step, window_shape = 'gaussian', begin = None, padding = None):
+def signal_to_pitch(signal, sr, freq_lims, time_step, window_shape = 'gaussian', begin = None, padding = None, attributes = None):
     win_len = ACPitch._periods_per_window / freq_lims[0]
     if window_shape == 'gaussian':
         win_len *= 2
@@ -176,7 +176,7 @@ def signal_to_pitch(signal, sr, freq_lims, time_step, window_shape = 'gaussian',
         return real_output
     return output
 
-def file_to_pitch(filepath, freq_lims, time_step, window_shape = 'gaussian'):
+def file_to_pitch(filepath, freq_lims, time_step, window_shape = 'gaussian', attributes = None):
     sig, sr = librosa.load(filepath, sr = None, mono = False)
 
     output = signal_to_pitch(sig, sr, freq_lims, time_step, window_shape)

@@ -3,7 +3,7 @@ scipy
 scikit-learn
 networkx
 matplotlib
-nose
+pytest
 sphinx>=1.3b3
 numpydoc
 
