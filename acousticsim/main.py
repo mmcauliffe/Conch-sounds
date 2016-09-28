@@ -13,7 +13,7 @@ from acousticsim.representations import Envelopes, Mfcc
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
 from acousticsim.exceptions import AcousticSimError,NoWavError
-from acousticsim.multiprocessing import generate_cache, calc_asim, generate_cache_sig_dict
+from acousticsim.multiprocessing import generate_cache, generate_cache_rep, calc_asim, generate_cache_sig_dict
 from acousticsim.helper import _build_to_rep, load_attributes
 
 def acoustic_similarity_mapping(path_mapping, **kwargs):
@@ -90,7 +90,7 @@ def acoustic_similarity_mapping(path_mapping, **kwargs):
 
     attributes = kwargs.get('attributes',dict())
     if cache is None:
-        cache = generate_cache(path_mapping, to_rep, attributes, num_cores, call_back, stop_check)
+        cache = generate_cache_rep(path_mapping, to_rep, attributes, num_cores, call_back, stop_check)
 
     asim = calc_asim(path_mapping,cache,dist_func, output_sim,num_cores, call_back, stop_check)
     if kwargs.get('return_rep',False):

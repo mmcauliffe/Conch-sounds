@@ -78,6 +78,47 @@ class RepWorker(Process):
             true_label = os.path.split(path)[1]
             try:
                 rep = self.function(filename,attributes=att)
+                rep._true_label = true_label
+                self.return_dict[filename] = rep
+            except Exception as e:
+                self.stopped.stop()
+                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
+
+        return
+
+class FileRepWorker(Process):
+    def __init__(self, job_q, return_dict, rep_func, attributes, counter, stopped):
+        Process.__init__(self)
+        self.job_q = job_q
+        self.return_dict = return_dict
+        self.function = rep_func
+        self.attributes = attributes
+        self.counter = counter
+        self.stopped = stopped
+
+    def run(self):
+        while True:
+            self.counter.increment()
+            try:
+                filename = self.job_q.get(timeout=1)
+            except Empty:
+                break
+            self.job_q.task_done()
+            if self.stopped.stop_check():
+                continue
+            if not os.path.exists(filename):
+                continue
+            path, filelabel = os.path.split(filename)
+
+            att = OrderedDict()
+            att['filename'] = filelabel
+            try:
+                att.update(self.attributes[filelabel])
+            except (KeyError, TypeError):
+                pass
+            true_label = os.path.split(path)[1]
+            try:
+                rep = self.function(filename,attributes=att)
                 #rep._true_label = true_label
                 self.return_dict[filename] = rep
             except Exception as e:
@@ -213,6 +254,59 @@ def generate_cache_sig_dict(sig_dict, rep_func, num_procs, call_back, stop_check
     return return_dict
 
 def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
+
+    all_files = set()
+    for pm in path_mapping:
+        if stop_check is not None and stop_check():
+            return
+        all_files.update(pm)
+    all_files = sorted(all_files)
+    stopped = Stopped()
+    job_queue = JoinableQueue(100)
+    file_ind = 0
+    while True:
+        if file_ind == len(all_files):
+            break
+        try:
+            job_queue.put(all_files[file_ind],False)
+        except Full:
+            break
+        file_ind += 1
+    manager = Manager()
+    return_dict = manager.dict()
+    procs = []
+
+    counter = Counter()
+    for i in range(num_procs):
+        p = FileRepWorker(job_queue,
+                      return_dict,rep_func,attributes, counter, stopped)
+        procs.append(p)
+        p.start()
+    if call_back is not None:
+        call_back('Generating representations...')
+
+    while True:
+        if file_ind == len(all_files):
+            break
+        if stop_check is not None and stop_check():
+            stopped.stop()
+            time.sleep(1)
+            break
+        job_queue.put(all_files[file_ind])
+
+        if call_back is not None:
+            value = counter.value()
+            call_back(value)
+        file_ind += 1
+    job_queue.join()
+
+    for p in procs:
+        p.join()
+    if 'error' in return_dict:
+        raise(return_dict['error'])
+    return return_dict
+
+def generate_cache_rep(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
 
     all_files = set()
     for pm in path_mapping:
