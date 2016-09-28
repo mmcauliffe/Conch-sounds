@@ -108,8 +108,7 @@ def run_script(praatpath, name, *args):
         except UnicodeDecodeError:
             print(p.stdout.read())
             print(p.stderr.read())
-    if err:
-        print(text)
+    if not text and err:
         raise(AcousticSimPraatError(err))
     return text
 
