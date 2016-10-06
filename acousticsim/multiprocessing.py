@@ -87,7 +87,7 @@ class RepWorker(Process):
         return
 
 class FileRepWorker(Process):
-    def __init__(self, job_q, return_dict, rep_func, attributes, counter, stopped):
+    def __init__(self, job_q, return_dict, rep_func, attributes, counter, stopped, ignore_errors):
         Process.__init__(self)
         self.job_q = job_q
         self.return_dict = return_dict
@@ -95,6 +95,7 @@ class FileRepWorker(Process):
         self.attributes = attributes
         self.counter = counter
         self.stopped = stopped
+        self.ignore_errors = ignore_errors
 
     def run(self):
         while True:
@@ -122,6 +123,8 @@ class FileRepWorker(Process):
                 #rep._true_label = true_label
                 self.return_dict[filename] = rep
             except Exception as e:
+                if self.ignore_errors:
+                    continue
                 self.stopped.stop()
                 self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
 
@@ -253,7 +256,7 @@ def generate_cache_sig_dict(sig_dict, rep_func, num_procs, call_back, stop_check
         raise(return_dict['error'])
     return return_dict
 
-def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check):
+def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check, ignore_errors = False):
 
     all_files = set()
     for pm in path_mapping:
@@ -279,7 +282,7 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
     counter = Counter()
     for i in range(num_procs):
         p = FileRepWorker(job_queue,
-                      return_dict,rep_func,attributes, counter, stopped)
+                      return_dict,rep_func,attributes, counter, stopped, ignore_errors)
         procs.append(p)
         p.start()
     if call_back is not None:
