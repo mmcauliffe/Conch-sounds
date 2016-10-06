@@ -123,8 +123,6 @@ class FileRepWorker(Process):
                 #rep._true_label = true_label
                 self.return_dict[filename] = rep
             except Exception as e:
-                if self.ignore_errors:
-                    continue
                 self.stopped.stop()
                 self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
 
@@ -264,6 +262,7 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
             return
         all_files.update(pm)
     all_files = sorted(all_files)
+    print(all_files[:10])
     stopped = Stopped()
     job_queue = JoinableQueue(100)
     file_ind = 0
