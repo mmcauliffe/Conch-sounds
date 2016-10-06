@@ -109,6 +109,7 @@ def run_script(praatpath, name, *args):
             print(p.stdout.read())
             print(p.stderr.read())
     if err and not err.strip().startswith('Warning'):
+        print(args)
         raise(AcousticSimPraatError(err))
     return text
 
