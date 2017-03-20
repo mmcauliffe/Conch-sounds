@@ -1,9 +1,10 @@
 from numpy import zeros, arange,argmin,min,abs, log2, ceil,floor, \
                         shape, float,mean,sqrt,log10,linspace,array,pad
 from numpy.fft import fft, ifft, rfft, irfft
-from scipy.io import wavfile
 from scipy.signal import lfilter#,resample, decimate
 from scipy.interpolate import interp1d, InterpolatedUnivariateSpline
+from scipy.io import wavfile
+from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 def nextpow2(x):
     """Return the first integer N such that 2**N >= abs(x)"""
@@ -18,6 +19,9 @@ def extract_wav(path,outpath,begin_time,end_time):
 
     newsig = sig[begin:end]
     wavfile.write(outpath,sr,newsig)
+
+def preemphasize(signal, alpha):
+    return lfilter([1., -alpha],1, signal)
 
 def preproc(path,sr=16000,alpha=0.95):
     """Preprocess a .wav file for later processing.  Currently assumes a
@@ -59,13 +63,51 @@ def preproc(path,sr=16000,alpha=0.95):
         proc = lfilter([1., -alpha],1,proc)
     return sr,proc
 
+
 def erb_rate_to_hz(x):
     y=(10**(x/21.4)-1)/4.37e-3
     return y
 
+
 def hz_to_erb_rate(x):
     y=(21.4*log10(4.37e-3*x+1))
     return y
+
+
+def freq_to_mel(freq):
+    """Convert a value in Hertz to a value in mel.
+
+    Parameters
+    ----------
+    freq : numeric
+        Frequency value in Hertz to convert.
+
+    Returns
+    -------
+    float
+        Frequency value in mel.
+
+    """
+
+    return 2595 * log10(1+freq/700.0)
+
+
+def mel_to_freq(mel):
+    """Convert a value in mel to a value in Hertz.
+
+    Parameters
+    ----------
+    mel : numeric
+        Frequency value in mel to convert.
+
+    Returns
+    -------
+    float
+        Frequency value in Hertz.
+
+    """
+
+    return 700*(10**(mel/2595.0)-1)
 
 def make_erb_cfs(freq_lims,num_channels):
     cfs = erb_rate_to_hz(linspace(hz_to_erb_rate(freq_lims[0]),hz_to_erb_rate(freq_lims[1]),num_channels))
@@ -136,3 +178,42 @@ def fftfilt(b, x, *n):
         i += L
     return y
 
+
+def fix_time_points(output, begin, padding, duration):
+    if begin is not None:
+        if padding is not None:
+            begin -= padding
+        real_output = {}
+        for k,v in output.items():
+            if padding is not None and (k < padding or k > duration - padding):
+                continue
+            real_output[k+begin] = v
+        return real_output
+    return output
+
+
+class ASTemporaryWavFile(object):
+    def __init__(self, signal, sr):
+        self.temp_dir = TemporaryDirectory(prefix = 'acousticsim')
+        self.signal = signal
+        self.signal *= 32768
+        self.sr = sr
+
+    def __enter__(self):
+        t_wav = NamedTemporaryFile(dir=self.temp_dir.name, delete=False, suffix='.wav')
+        wavfile.write(t_wav, self.sr, self.signal.astype('int16'))
+        t_wav.close()
+        self.wav_path = t_wav.name
+        return self.wav_path
+
+    def __exit__(self, *args):
+        pass
+
+
+class ASTemporaryDirectory(TemporaryDirectory):
+    def create_temp_file(self, signal, sr):
+        t_wav = NamedTemporaryFile(dir=self, delete=False, suffix='.wav')
+        signal *= 32768
+        wavfile.write(t_wav, sr, signal.astype('int16'))
+        t_wav.close()
+        return t_wav

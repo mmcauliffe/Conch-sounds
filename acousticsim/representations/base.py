@@ -3,54 +3,52 @@ import numpy as np
 
 from acousticsim.processing.segmentation import to_segments
 
-class Representation(object):
 
-    def __init__(self, filepath, freq_lims, attributes):
-        self._duration = None
-        self._sr = None
-        self._true_label = None
-        self._attributes = None
-        self._segments = None
-        self._vowels = dict()
-        self._transcription = list()
-        self._rep = dict()
+class Representation(object):
+    def __init__(self, file_path, data=None, attributes=None):
+        self.duration = None
+        self.sr = None
+        self.label = None
+        self.segments = None
+        self.vowels = {}
+        self.transcription = []
+        if data is None:
+            data = {}
+        self.data = data
         if attributes is None:
             attributes = dict()
-        self._filepath = filepath
-        self._freq_lims = freq_lims
-        self._attributes = attributes
+        self.file_path = file_path
+        self.attributes = attributes
         self.is_windowed = False
 
-
-    def __getitem__(self,key):
-        if isinstance(key,str):
-            if key in self._attributes:
-                return self._attributes[key]
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            if key in self.attributes:
+                return self.attributes[key]
             else:
-                return getattr(self,key,None)
-        elif self._rep is not None:
+                return getattr(self, key, None)
+        elif self.data is not None:
             if isinstance(key, tuple):
                 return self.get_values_between_times(*key)
             else:
                 return self.get_value_at_time(key)
-        raise(KeyError)
+        raise KeyError
 
     def get_values_between_times(self, begin, end):
         output = list()
-        times = sorted(self._rep.keys())
+        times = sorted(self.data.keys())
         for t in times:
             if t < begin:
                 continue
             if t > end:
                 break
-            output.append(self._rep[t])
+            output.append(self.data[t])
         return np.array(output, dtype = np.float32)
 
-    def get_value_at_time(self,time):
-        if time in self._rep:
-            return self._rep[time]
-        times = sorted(self._rep.keys())
-        begin_ind = 0
+    def get_value_at_time(self, time):
+        if time in self.data:
+            return self.data[time]
+        times = sorted(self.data.keys())
         for i, k in enumerate(times):
             if time < k:
                 end_ind = i
@@ -73,26 +71,26 @@ class Representation(object):
             return_val = list()
             for i in range(len(begin_val)):
                 if isinstance(begin_val[i],tuple):
-                    v = (begin_val[i][0] * (1 - percent)) + (end_val[i][0] * (percent))
+                    v = (begin_val[i][0] * (1 - percent)) + (end_val[i][0] * percent)
                     return_val.append(v)
                 else:
-                    return_val.append((begin_val[i] * (1 - percent)) + (end_val[i] * (percent)))
+                    return_val.append((begin_val[i] * (1 - percent)) + (end_val[i] * percent))
             return return_val
 
         else:
-            return (begin_val * (1 - percent)) + (end_val * (percent))
+            return (begin_val * (1 - percent)) + (end_val * percent)
 
     def to_array(self):
-        times = sorted(self._rep.keys())
-        ex = next(iter(self._rep.values()))
+        times = sorted(self.data.keys())
+        ex = next(iter(self.data.values()))
         try:
             frame_len = len(ex)
-        except:
+        except ValueError:
             frame_len = 1
 
-        output = np.zeros((len(times),frame_len))
+        output = np.zeros((len(times), frame_len))
         for i, t in enumerate(times):
-            output[i,:] = self._rep[t]
+            output[i, :] = self.data[t]
         return output
 
     def window(self, win_len, time_step):
@@ -100,89 +98,65 @@ class Representation(object):
             return False
         pass
 
-    def time_from_index(self,index):
+    def time_from_index(self, index):
         if index >= len(self):
-            return self._duration
-        return sorted(self._rep.keys())[index]
+            return self.duration
+        return sorted(self.data.keys())[index]
 
-    def segment(self,threshold = 0.1):
+    def segment(self, threshold=0.1):
         if not self.is_windowed:
             return False
-        segments, means = to_segments(self.to_array(), threshold = threshold,return_means=True)
+        segments, means = to_segments(self.to_array(), threshold=threshold, return_means=True)
         begin = 0
-        self._segments = dict()
-        for i,end_frame in enumerate(segments):
+        self.segments = {}
+        for i, end_frame in enumerate(segments):
             end_time = self.time_from_index(end_frame)
-            self._segments[begin, end_time] = means[i]
+            self.segments[begin, end_time] = means[i]
             begin = end_time
         return True
 
     @property
     def rep(self):
-        output = list()
-        for k in sorted(self._rep.keys()):
-            output.append(self._rep[k])
-        return np.array(output, dtype = np.float32)
-
-    @rep.setter
-    def rep(self, value):
-        self._rep = value
+        output = []
+        for k in sorted(self.data.keys()):
+            output.append(self.data[k])
+        return np.array(output, dtype=np.float32)
 
     def items(self):
-        for k in sorted(self._rep.keys()):
-            yield (k,self._rep[k])
+        for k in sorted(self.data.keys()):
+            yield (k, self.data[k])
 
     def keys(self):
-        for k in sorted(self._rep.keys()):
+        for k in sorted(self.data.keys()):
             yield k
 
     def values(self):
-        for k in sorted(self._rep.keys()):
-            yield self._rep[k]
+        for k in sorted(self.data.keys()):
+            yield self.data[k]
 
     def first(self):
-        k = sorted(self._rep.keys())[0]
-        return self._rep[k]
+        k = sorted(self.data.keys())[0]
+        return self.data[k]
 
     def __len__(self):
-        return len(self._rep.keys())
+        return len(self.data.keys())
 
     def __iter__(self):
-        for k in sorted(self._rep.keys()):
-            yield self._rep[k]
-
-    @property
-    def vowel_times(self):
-        return self._vowels
-
-    @vowel_times.setter
-    def vowel_times(self, times):
-        self._vowels = times
-
-    @property
-    def transcription(self):
-        return self._transcription
-
-    @transcription.setter
-    def transcription(self, value):
-        self._transcription = value
+        for k in sorted(self.data.keys()):
+            yield self.data[k]
 
     @property
     def times(self):
-        return sorted(self._rep.keys())
+        return sorted(self.data.keys())
 
     @property
     def vowel_durations(self):
-        return [x[1] - x[0] for x in sorted(self._vowels.keys())]
+        return [x[1] - x[0] for x in sorted(self.vowels.keys())]
 
     @property
     def shape(self):
-        num_frames = len(self._rep.keys())
+        num_frames = len(self.data.keys())
         if num_frames == 0:
-            return 0,0
+            return 0, 0
         else:
-            return num_frames, len(next(iter(self._rep.values())))
-
-    @property
-    def sampling_rate(self):
-        return self._sr
+            return num_frames, len(next(iter(self.data.values())))

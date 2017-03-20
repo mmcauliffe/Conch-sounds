@@ -1,7 +1,10 @@
 
 import pytest
 
-from acousticsim.praat import file_to_formants_praat, file_to_pitch_praat, file_to_intensity_praat, file_to_mfcc_praat
+from acousticsim.analysis.formants.praat import file_to_formants_praat
+from acousticsim.analysis.pitch.praat import file_to_pitch_praat
+from acousticsim.analysis.intensity.praat import file_to_intensity_praat
+from acousticsim.analysis.mfcc.praat import file_to_mfcc_praat
 
 from numpy.testing import assert_array_almost_equal
 
@@ -15,7 +18,7 @@ def test_ac(praatpath, base_filenames):
     for f in base_filenames:
         wavpath = f + '.wav'
         pitch = file_to_pitch_praat(wavpath, praatpath, time_step = 0.01,
-                freq_lims = (75,600))
+                min_pitch=75, max_pitch=600)
 
 def test_intensity(praatpath, base_filenames):
     for f in base_filenames:

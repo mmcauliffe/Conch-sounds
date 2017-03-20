@@ -1,69 +1,49 @@
+import numpy as np
 
-from numpy import log10,zeros,abs,arange, hanning, pad, spacing, ceil, log, floor
-from numpy.fft import fft
-
-
-from acousticsim.representations.base import Representation
-from .helper import preproc
-
-
-def to_powerspec(x, sr, win_len, time_step):
-    nperseg = int(win_len*sr)
-    if nperseg % 2 != 0:
-        nperseg -= 1
-
-    nperstep = int(time_step*sr)
-    nfft = int(2**(ceil(log(nperseg)/log(2))))
-    window = hanning(nperseg+2)[1:nperseg+1]
-    halfperseg = int(nperseg/2)
-    indices = arange(halfperseg, x.shape[0] - (halfperseg + 1), nperstep)
-    num_frames = len(indices)
-
-    #pspec = zeros((num_frames,int(nfft/2)+1))
-    pspec = dict()
-    for i in range(num_frames):
-        X = x[indices[i]-halfperseg:indices[i]+halfperseg]
-        X = X * window
-        fx = fft(X, n = nfft)
-        power = abs(fx[:int(nfft/2)+1])**2
-        #pspec[i,:] = power
-        pspec[indices[i]/sr] = power
-    return pspec
+from .base import Representation
+from acousticsim.exceptions import AcousticSimError
+from acousticsim.analysis.specgram import file_to_powerspec
 
 class Spectrogram(Representation):
-    def __init__(self, filepath, freq_lims, win_len, time_step, attributes = None):
-        Representation.__init__(self,filepath, freq_lims, attributes)
-        self._win_len = win_len
-        self._time_step = time_step
+    def __init__(self, file_path, min_freq, max_freq, win_len, time_step, data=None, attributes=None):
+        Representation.__init__(self,file_path, data=data, attributes=attributes)
 
-        self.process()
+        self.min_freq = min_freq
+        self.max_freq = max_freq
+        self.win_len = win_len
+        self.time_step = time_step
+        if self.time_step is None:
+            steps = 100
+            self.time_step = self.duration / steps
+        self.pspec = {}
+        self.freqs = []
 
-    def pspec(self):
-        times = sorted(self._pspec.keys())
-        ex = next(iter(self._pspec.values()))
+    def powerspec(self):
+        times = sorted(self.pspec.keys())
+        ex = next(iter(self.pspec.values()))
         try:
             frame_len = len(ex)
-        except:
+        except ValueError:
             frame_len = 1
 
-        output = zeros((len(times),frame_len))
+        output = np.zeros((len(times),frame_len))
         for i, t in enumerate(times):
-            output[i,:] = self._pspec[t]
+            output[i, :] = self.pspec[t]
         return output
 
-    def process(self):
-        sr, proc = preproc(self._filepath,alpha=0.97)
-        self._duration = len(proc) / sr
-        if self._time_step is None:
-            steps = 100
-            time_step = self._duration / steps
+    def process(self, algorithm='as', reset=False):
 
+        if algorithm not in ['as']:
+            raise AcousticSimError('Spectrogram algorithm must be one of: as')
+        if reset:
+            self.data = {}
+        if self.data:
+            raise AcousticSimError('Data already exists for this representation, use reset=True to generate new data.')
 
-        self._pspec = to_powerspec(proc, sr, self._win_len, self._time_step)
-        self._rep = dict()
-        for k in self._pspec:
-            nfft = (len(self._pspec[k])-1) * 2
-            self._rep[k] = 10 * log10(self._pspec[k] + spacing(1))
+        self.pspec = file_to_powerspec(self.file_path, self.win_len, self.time_step)
+        for k in self.pspec.keys():
+            nfft = (len(self.pspec[k])-1) * 2
+            self.data[k] = 10 * np.log10(self.pspec[k] + np.spacing(1))
 
-        self._freqs = (sr / nfft) * arange((nfft/2) + 1)
+        self.freqs = (self.sr / nfft) * np.arange((nfft/2) + 1)
 

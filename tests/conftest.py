@@ -5,10 +5,10 @@ import os
 from acousticsim.utils import concatenate_files
 from acousticsim.representations.base import Representation
 
-from acousticsim.representations.reaper import signal_to_pitch_reaper
+from acousticsim.analysis.pitch.reaper import signal_to_pitch_reaper
 
-from acousticsim.representations.formants import signal_to_formants
-from acousticsim.representations.pitch import signal_to_pitch
+from acousticsim.analysis.formants import signal_to_formants
+from acousticsim.analysis.pitch.autocorrelation import signal_to_pitch
 
 from functools import partial
 
@@ -79,28 +79,27 @@ def reaperpath():
 
 @pytest.fixture(scope='session')
 def reaper_func(reaperpath):
-    return partial(signal_to_pitch_reaper, reaper = reaperpath, time_step = 0.01,
-                                        freq_lims = (50,500))
+    return partial(signal_to_pitch_reaper, reaper_path = reaperpath, time_step = 0.01,
+                   min_pitch=50, max_pitch=500)
 
 @pytest.fixture(scope='session')
 def formants_func():
-    return partial(signal_to_formants, freq_lims = (0, 5000), time_step = 0.01, num_formants = 5,
-                                        win_len = 0.025, window_shape = 'gaussian')
+    return partial(signal_to_formants, max_freq = 5000, time_step = 0.01, num_formants = 5,
+                                        win_len = 0.025)
 
 @pytest.fixture(scope='session')
 def pitch_func():
-    return partial(signal_to_pitch, freq_lims = (50, 500), time_step = 0.01,
-                                        window_shape = 'gaussian')
+    return partial(signal_to_pitch, min_pitch =50, max_pitch = 500, time_step = 0.01)
 
 @pytest.fixture(scope='session')
 def reps_for_distance():
     source = Representation(None,None,None)
-    source.rep = {1:[2,3,4],
+    source.data = {1:[2,3,4],
                 2:[5,6,7],
                 3:[2,7,6],
                 4:[1,5,6]}
     target = Representation(None,None,None)
-    target.rep = {1:[5,6,7],
+    target.data = {1:[5,6,7],
                 2:[2,3,4],
                 3:[6,8,3],
                 4:[2,7,9],

@@ -130,6 +130,39 @@ class FileRepWorker(Process):
 
         return
 
+class FileWorker(Process):
+    def __init__(self, job_q, return_dict, rep_func, counter, stopped, ignore_errors):
+        Process.__init__(self)
+        self.job_q = job_q
+        self.return_dict = return_dict
+        self.function = rep_func
+        self.counter = counter
+        self.stopped = stopped
+        self.ignore_errors = ignore_errors
+
+    def run(self):
+        while True:
+            self.counter.increment()
+            try:
+                filename = self.job_q.get(timeout=1)
+            except Empty:
+                break
+            self.job_q.task_done()
+            if self.stopped.stop_check():
+                continue
+            if not os.path.exists(filename):
+                continue
+            try:
+                rep = self.function(filename)
+                self.return_dict[filename] = rep
+            except Exception as e:
+                if self.ignore_errors:
+                    continue
+                self.stopped.stop()
+                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
+
+        return
+
 class SigRepWorker(Process):
     def __init__(self, job_q, return_dict, rep_func, counter, stopped):
         Process.__init__(self)
@@ -150,7 +183,7 @@ class SigRepWorker(Process):
             if self.stopped.stop_check():
                 continue
             try:
-                rep = self.function(signal = sig, begin = key[0])
+                rep = self.function(signal=sig, begin=key[0])
                 self.return_dict[key] = rep
             except Exception as e:
                 self.stopped.stop()
@@ -256,7 +289,7 @@ def generate_cache_sig_dict(sig_dict, rep_func, num_procs, call_back, stop_check
         raise(return_dict['error'])
     return return_dict
 
-def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_check, ignore_errors = False):
+def generate_cache(path_mapping,rep_func,num_procs, call_back, stop_check, ignore_errors = False):
 
     all_files = set()
     for pm in path_mapping:
@@ -281,8 +314,8 @@ def generate_cache(path_mapping,rep_func, attributes,num_procs, call_back, stop_
 
     counter = Counter()
     for i in range(num_procs):
-        p = FileRepWorker(job_queue,
-                      return_dict,rep_func,attributes, counter, stopped, ignore_errors)
+        p = FileWorker(job_queue,
+                      return_dict,rep_func, counter, stopped, ignore_errors)
         procs.append(p)
         p.start()
     if call_back is not None:

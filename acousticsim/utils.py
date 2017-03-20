@@ -3,7 +3,7 @@ import wave
 import numpy as np
 from scipy.io import wavfile
 
-from .representations.helper import preproc
+from .analysis.helper import preproc
 
 from .exceptions import AcousticSimError
 

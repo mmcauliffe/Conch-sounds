@@ -3,7 +3,7 @@
 import os
 import pytest
 
-from acousticsim.representations.amplitude_envelopes import Envelopes, window_envelopes
+from acousticsim.representations.amplitude_envelopes import Envelopes
 
 from scipy.io import loadmat
 
@@ -45,4 +45,4 @@ def test_window_envelope(base_filenames):
         wavpath = f+'.wav'
         env = Envelopes(wavpath,(80,7800), 4)
         env.process()
-        rep = window_envelopes(env, 0.025, 0.010)
+        env.window_envelopes(0.025, 0.010)

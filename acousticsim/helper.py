@@ -23,8 +23,8 @@ def _build_to_rep(**kwargs):
 
     num_filters = kwargs.get('num_filters',None)
     num_coeffs = kwargs.get('num_coeffs', 20)
-
-    freq_lims = kwargs.get('freq_lims', (80, 7800))
+    min_freq = kwargs.get('min_freq', 80)
+    max_freq = kwargs.get('max_freq', 7800)
 
     win_len = kwargs.get('win_len', None)
     time_step = kwargs.get('time_step', None)
@@ -45,9 +45,9 @@ def _build_to_rep(**kwargs):
     if rep == 'envelopes':
         to_rep = partial(Envelopes,
                                 num_bands=num_filters,
-                                freq_lims=freq_lims)
+                         min_freq=min_freq, max_freq=max_freq)
     elif rep == 'mfcc':
-        to_rep = partial(Mfcc,freq_lims=freq_lims,
+        to_rep = partial(Mfcc, min_freq=min_freq, max_freq = max_freq,
                                     num_coeffs=num_coeffs,
                                     num_filters = num_filters,
                                     win_len=win_len,

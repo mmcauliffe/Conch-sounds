@@ -1,6 +1,6 @@
 
 import os
-from acousticsim.representations.gammatone import to_gammatone
+from acousticsim.analysis.gammatone import to_gammatone
 
 from scipy.io import loadmat
 
