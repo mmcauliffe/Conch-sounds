@@ -56,7 +56,10 @@ if __name__ == '__main__':
                 'acousticsim.representations',
                 'acousticsim.processing',
                 'acousticsim.clustering'],
-      package_data={'acousticsim.praat': ['*.praat']},
+      package_data={'acousticsim.analysis.pitch': ['*.praat'],
+                    'acousticsim.analysis.formants': ['*.praat'],
+                    'acousticsim.analysis.intensity': ['*.praat'],
+                    'acousticsim.analysis.mfcc': ['*.praat']},
       install_requires=[
             'numpy',
             'scipy',
