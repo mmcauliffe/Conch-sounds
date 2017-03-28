@@ -2,7 +2,7 @@ import sys
 import os
 from ..praat import run_script, read_praat_out
 
-from ..helper import ASTemporaryDirectory, fix_time_points
+from ..helper import fix_time_points, ASTemporaryWavFile
 
 
 def file_to_pitch_praat(file_path, praat_path=None, time_step=0.01, min_pitch=75, max_pitch=600):
@@ -19,8 +19,7 @@ def file_to_pitch_praat(file_path, praat_path=None, time_step=0.01, min_pitch=75
 
 def signal_to_pitch_praat(signal, sr, praat_path=None,
                           time_step=0.01, min_pitch=75, max_pitch=600, begin=None, padding=None):
-    with ASTemporaryDirectory(prefix = 'acousticsim') as tempdir:
-        t_wav = tempdir.create_temp_file(signal, sr)
-        output = file_to_pitch_praat(t_wav.name, praat_path, time_step, min_pitch, max_pitch)
+    with ASTemporaryWavFile(signal, sr) as wav_path:
+        output = file_to_pitch_praat(wav_path, praat_path, time_step, min_pitch, max_pitch)
     duration = signal.shape[0] / sr
     return fix_time_points(output, begin, padding, duration)
