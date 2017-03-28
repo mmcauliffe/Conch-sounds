@@ -22,7 +22,7 @@ class ClusterNetwork(object):
         for i,r in enumerate(sorted(reps.keys())):
             self.lookup[r] = i
             if self.attributes is None:
-                self.attributes = list(reps[r]._attributes.keys())
+                self.attributes = list(reps[r].attributes.keys())
             nodes.append((i,{'rep':reps[r]}))
         self.g.add_nodes_from(nodes)
         self.clusters = None

@@ -13,7 +13,7 @@ from acousticsim.representations import Envelopes, Mfcc
 from acousticsim.distance import dtw_distance, xcorr_distance, dct_distance
 
 from acousticsim.exceptions import AcousticSimError,NoWavError
-from acousticsim.multiprocessing import generate_cache, generate_cache_rep, calc_asim, generate_cache_sig_dict
+from acousticsim.multiprocessing import generate_cache, generate_cache_rep, calc_asim, generate_cache_sig_dict,generate_cache_file_segments
 from acousticsim.helper import _build_to_rep, load_attributes
 
 def acoustic_similarity_mapping(path_mapping, **kwargs):
@@ -359,7 +359,7 @@ def create_sig_dict(path, segments, padding = None):
     return data, sr
 
 def analyze_long_file(path, segments, function,
-                num_jobs = None, channel = 0, padding = None,
+                num_jobs = None, padding = None,
                 call_back = None, stop_check = None):
     data, sr = create_sig_dict(path, segments, padding)
     function = partial(function, sr = sr, padding = padding)
@@ -368,5 +368,16 @@ def analyze_long_file(path, segments, function,
     else:
         num_cores = num_jobs
     output_dict = generate_cache_sig_dict(data, function, num_cores,
+                                        call_back, stop_check)
+    return output_dict
+
+def analyze_file_segments(file_segments, function,
+                num_jobs = None, padding = None,
+                call_back = None, stop_check = None):
+    if num_jobs is None:
+        num_cores = int((3*cpu_count())/4)
+    else:
+        num_cores = num_jobs
+    output_dict = generate_cache_file_segments(file_segments, function, padding,num_cores,
                                         call_back, stop_check)
     return output_dict

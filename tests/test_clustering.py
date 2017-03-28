@@ -9,7 +9,7 @@ slow = pytest.mark.skipif(
     reason="need --runslow option to run"
 )
 
-@slow
+#@slow
 def test_clustering(soundfiles_dir, call_back):
     kwargs = {'rep': 'mfcc','win_len': 0.025,
                 'time_step': 0.01, 'num_coeffs': 13,
