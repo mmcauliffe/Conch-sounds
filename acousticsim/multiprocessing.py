@@ -217,7 +217,7 @@ class SegmentWorker(Process):
             if begin < 0:
                 begin = 0
         duration = end - begin
-        sig, sr = librosa.load(path, sr = None, mono = False, offset = begin, duration=duration)
+        sig, sr = librosa.load(os.path.expanduser(path), sr = None, mono = False, offset = begin, duration=duration)
         return sig, sr
 
     def run(self):
