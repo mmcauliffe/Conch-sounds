@@ -210,10 +210,10 @@ class ASTemporaryWavFile(object):
         pass
 
 
-class ASTemporaryDirectory(TemporaryDirectory):
-    def create_temp_file(self, signal, sr):
-        t_wav = NamedTemporaryFile(dir=self, delete=False, suffix='.wav')
-        signal *= 32768
-        wavfile.write(t_wav, sr, signal.astype('int16'))
-        t_wav.close()
-        return t_wav
+#class ASTemporaryDirectory(TemporaryDirectory):
+#    def create_temp_file(self, signal, sr):
+#        t_wav = NamedTemporaryFile(dir=self, delete=False, suffix='.wav')
+#        signal *= 32768
+#        wavfile.write(t_wav, sr, signal.astype('int16'))
+#        t_wav.close()
+#        return t_wav

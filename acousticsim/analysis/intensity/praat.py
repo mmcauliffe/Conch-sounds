@@ -3,7 +3,7 @@ import os
 
 from ..praat import run_script, read_praat_out
 
-from ..helper import ASTemporaryDirectory, fix_time_points
+from ..helper import ASTemporaryWavFile, fix_time_points
 
 
 def file_to_intensity_praat(file_path, praat_path = None, time_step = 0.01):
@@ -22,8 +22,7 @@ def file_to_intensity_praat(file_path, praat_path = None, time_step = 0.01):
 
 def signal_to_intensity_praat(signal, sr, praat_path=None,time_step=0.01,
                               begin=None, padding=None):
-    with ASTemporaryDirectory(prefix = 'acousticsim') as tempdir:
-        t_wav = tempdir.create_temp_file(signal, sr)
-        output = file_to_intensity_praat(t_wav.name, praat_path, time_step)
+    with ASTemporaryWavFile(signal, sr) as wav_path:
+        output = file_to_intensity_praat(wav_path, praat_path, time_step)
     duration = signal.shape[0] / sr
     return fix_time_points(output, begin, padding, duration)

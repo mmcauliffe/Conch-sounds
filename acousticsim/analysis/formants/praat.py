@@ -3,15 +3,14 @@ import os
 
 from ..praat import run_script, read_praat_out
 
-from ..helper import ASTemporaryDirectory, fix_time_points
+from ..helper import ASTemporaryWavFile, fix_time_points
 
 
 def signal_to_formants_praat(signal, sr, praat_path=None, num_formants=5, max_freq=5000,
                              time_step=0.01, win_len=0.025,
                              begin=None, padding=None):
-    with ASTemporaryDirectory(prefix = 'acousticsim') as tempdir:
-        t_wav = tempdir.create_temp_file(signal, sr)
-        output = file_to_formants_praat(t_wav.name, praat_path, num_formants, max_freq, time_step, win_len)
+    with ASTemporaryWavFile(signal, sr) as wav_path:
+        output = file_to_formants_praat(wav_path, praat_path, num_formants, max_freq, time_step, win_len)
     duration = signal.shape[0] / sr
     return fix_time_points(output, begin, padding, duration)
 
