@@ -217,7 +217,7 @@ class SegmentWorker(Process):
             if begin < 0:
                 begin = 0
         duration = end - begin
-        sig, sr = librosa.load(os.path.expanduser(path), sr = None, mono = False, offset = begin, duration=duration)
+        sig, sr = librosa.load(os.path.expanduser(path), sr=None, mono=False, offset=begin, duration=duration)
         return sig, sr
 
     def run(self):
@@ -231,7 +231,7 @@ class SegmentWorker(Process):
             if self.stopped.stop_check():
                 continue
             try:
-                path, begin, end, channel = seg
+                path, begin, end, channel = seg[:4]
                 sig, sr = self.load_segment(path, begin, end, channel)
                 rep = self.function(signal=sig, begin=begin, sr=sr, padding=self.padding)
                 self.return_dict[seg] = rep
