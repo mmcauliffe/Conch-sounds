@@ -11,6 +11,7 @@ def run_script(praat_path, script_path, *args):
     com = [praat_path]
     if praat_path.endswith('con.exe'):
         com += ['-a']
+    com += ['--run']
     com +=[script_path] + list(map(str,args))
     err = ''
     text = ''
