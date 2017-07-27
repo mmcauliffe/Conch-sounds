@@ -56,9 +56,7 @@ if __name__ == '__main__':
                     'acousticsim.analysis.pitch',
                     'acousticsim.analysis.praat',
                     'acousticsim.distance',
-                    'acousticsim.representations',
-                    'acousticsim.processing',
-                    'acousticsim.clustering'],
+                    'acousticsim.representations'],
           package_data={'acousticsim.analysis.pitch': ['*.praat'],
                         'acousticsim.analysis.formants': ['*.praat'],
                         'acousticsim.analysis.intensity': ['*.praat'],
@@ -66,8 +64,6 @@ if __name__ == '__main__':
           install_requires=[
               'numpy',
               'scipy',
-              'scikit-learn',
-              'networkx',
               'textgrid',
               'librosa'
           ],

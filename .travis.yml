@@ -8,6 +8,7 @@ branches:
 notifications:
   email: false
 
+dist: trusty
 sudo: true
 
 before_install:

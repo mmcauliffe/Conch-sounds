@@ -4,11 +4,16 @@
       real timestep
       real minpitch
       real maxpitch
+      real silence_threshold
+      real voicing_threshold
+      real octave_cost
+      real octave_jump_cost
+      real voiced_unvoiced_cost
     endform
 
     Read from file... 'filename$'
 
-    To Pitch (ac)... 'timestep' 'minpitch' 15 yes 0.03 0.45 0.01 0.35 0.14 'maxpitch'
+    To Pitch (ac)... 'timestep' 'minpitch' 15 yes 'silence_threshold' 'voicing_threshold' 'octave_cost' 'octave_jump_cost' 'voiced_unvoiced_cost' 'maxpitch'
     frames = Get number of frames
 
     output$ = "time"+tab$+"F0"+newline$

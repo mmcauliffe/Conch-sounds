@@ -21,14 +21,12 @@ fi
 if [ ! -f "$HOME/tools/praat" ]; then
   cd $HOME/downloads
   #FOR WHEN TRAVIS UPDATES TO A NEWER UBUNTU
-  #latestVer=$(curl -s 'http://www.fon.hum.uva.nl/praat/download_linux.html' |
-  # grep -Eo 'praat[0-9]+_linux64\.tar\.gz' | head -1)
+  latestVer=$(curl -s 'http://www.fon.hum.uva.nl/praat/download_linux.html' |
+   grep -Eo 'praat[0-9]+_linux64barren\.tar\.gz' | head -1)
 
   # Download.
-  #curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
-  #tar -zxvf praat-latest.tar.gz
-  wget http://www.fon.hum.uva.nl/praat/old/5412/praat5412_linux64.tar.gz
-  tar -zxvf praat5412_linux64.tar.gz
+  curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
+  tar -zxvf praat-latest.tar.gz
   mv praat $HOME/tools/praat
 else
   echo "Praat already installed."

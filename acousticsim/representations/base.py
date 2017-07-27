@@ -1,8 +1,6 @@
 
 import numpy as np
 
-from acousticsim.processing.segmentation import to_segments
-
 
 class Representation(object):
     def __init__(self, file_path, data=None, attributes=None):
@@ -102,18 +100,6 @@ class Representation(object):
         if index >= len(self):
             return self.duration
         return sorted(self.data.keys())[index]
-
-    def segment(self, threshold=0.1):
-        if not self.is_windowed:
-            return False
-        segments, means = to_segments(self.to_array(), threshold=threshold, return_means=True)
-        begin = 0
-        self.segments = {}
-        for i, end_frame in enumerate(segments):
-            end_time = self.time_from_index(end_frame)
-            self.segments[begin, end_time] = means[i]
-            begin = end_time
-        return True
 
     @property
     def rep(self):
