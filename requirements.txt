@@ -1,7 +1,5 @@
 numpy
 scipy
-scikit-learn
-networkx
 matplotlib
 pytest
 sphinx>=1.3b3

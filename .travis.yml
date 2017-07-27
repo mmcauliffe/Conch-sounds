@@ -19,7 +19,7 @@ before_install:
 # Install packages
 install:
   - export PATH="$HOME/miniconda/miniconda/bin:$PATH"
-  - source activate "test-environment$TRAVIS_PYTHON_VERSION"
+  - source activate test-environment
   - which python
   - conda list
 

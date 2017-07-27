@@ -11,8 +11,8 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment$TRAVIS_PYTHON_VERSION
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
-  conda create -q -n "test-environment$TRAVIS_PYTHON_VERSION" python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest scikit-learn networkx setuptools
-  source activate "test-environment$TRAVIS_PYTHON_VERSION"
+  conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest setuptools
+  source activate test-environment
   pip install -q textgrid coveralls coverage librosa
 else
   echo "Miniconda already installed."
@@ -27,7 +27,7 @@ if [ ! -f "$HOME/tools/praat" ]; then
   # Download.
   curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
   tar -zxvf praat-latest.tar.gz
-  mv praat $HOME/tools/praat
+  mv praat_barren $HOME/tools/praat
 else
   echo "Praat already installed."
 fi
