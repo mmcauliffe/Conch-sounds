@@ -84,7 +84,7 @@ def parse_output(output_file):
             if not body:
                 continue
             time, voiced, pitch = line.split(' ')
-            output[float(time)] = float(pitch)
+            output[float(time)] = {'F0': float(pitch)}
     return output
 
 

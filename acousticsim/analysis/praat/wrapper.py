@@ -1,8 +1,6 @@
-
 import os
 from subprocess import Popen, PIPE
 import re
-
 
 from acousticsim.exceptions import AcousticSimPraatError
 
@@ -12,7 +10,7 @@ def run_script(praat_path, script_path, *args):
     if praat_path.endswith('con.exe'):
         com += ['-a']
     com += ['--run']
-    com +=[script_path] + list(map(str,args))
+    com += [script_path] + list(map(str, args))
     err = ''
     text = ''
     with Popen(com, stdout=PIPE, stderr=PIPE, stdin=PIPE) as p:
@@ -25,7 +23,7 @@ def run_script(praat_path, script_path, *args):
     if (err and not err.strip().startswith('Warning')) or not text:
         print(com)
         print(args)
-        raise(AcousticSimPraatError(err))
+        raise (AcousticSimPraatError(err))
     return text
 
 
@@ -41,7 +39,7 @@ def read_praat_out(text):
             print(text)
             raise
         if l.startswith('time'):
-            head = re.sub('[(]\w+[)]','',l)
+            head = re.sub('[(]\w+[)]', '', l)
             head = head.split("\t")[1:]
     output = {}
     for l in lines:
