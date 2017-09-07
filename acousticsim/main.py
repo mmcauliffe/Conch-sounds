@@ -373,11 +373,11 @@ def analyze_long_file(path, segments, function,
 
 def analyze_file_segments(file_segments, function,
                 num_jobs = None, padding = None,
-                call_back = None, stop_check = None):
+                call_back = None, stop_check = None, signal=True):
     if num_jobs is None:
         num_cores = int((3*cpu_count())/4)
     else:
         num_cores = num_jobs
     output_dict = generate_cache_file_segments(file_segments, function, padding,num_cores,
-                                        call_back, stop_check)
+                                        call_back, stop_check, signal)
     return output_dict

@@ -200,6 +200,37 @@ class SigRepWorker(Process):
         return
 
 
+class FileSegmentWorker(Process):
+    def __init__(self, job_q, return_dict, function, padding, counter, stopped):
+        Process.__init__(self)
+        self.job_q = job_q
+        self.return_dict = return_dict
+        self.function = function
+        self.padding = padding
+        self.counter = counter
+        self.stopped = stopped
+
+    def run(self):
+        while True:
+            self.counter.increment()
+            try:
+                seg = self.job_q.get(timeout=1)
+            except Empty:
+                break
+            self.job_q.task_done()
+            if self.stopped.stop_check():
+                continue
+            try:
+                path, begin, end, channel = seg[:4]
+                rep = self.function(path, begin, end, channel)
+                self.return_dict[seg] = rep
+            except Exception as e:
+                self.stopped.stop()
+                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
+
+        return
+
+
 class SegmentWorker(Process):
     def __init__(self, job_q, return_dict, function, padding, counter, stopped):
         Process.__init__(self)
@@ -295,7 +326,7 @@ class DistWorker(Process):
         return
 
 
-def generate_cache_file_segments(file_segments, function, padding, num_procs, call_back, stop_check):
+def generate_cache_file_segments(file_segments, function, padding, num_procs, call_back, stop_check, signal=True):
     stopped = Stopped()
     job_queue = JoinableQueue(100)
     seg_ind = 0
@@ -314,7 +345,10 @@ def generate_cache_file_segments(file_segments, function, padding, num_procs, ca
 
     counter = Counter()
     for i in range(num_procs):
-        p = SegmentWorker(job_queue, return_dict, function, padding, counter, stopped)
+        if signal:
+            p = SegmentWorker(job_queue, return_dict, function, padding, counter, stopped)
+        else:
+            p = FileSegmentWorker(job_queue, return_dict, function, padding, counter, stopped)
         procs.append(p)
         p.start()
     if call_back is not None:
