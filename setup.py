@@ -27,7 +27,7 @@ class PyTest(TestCommand):
 
 
 if __name__ == '__main__':
-    setup(name='conch',
+    setup(name='conch-sounds',
           version=conch.__version__,
           description='Analyze acoustic similarity in Python',
           classifiers=[
@@ -38,7 +38,7 @@ if __name__ == '__main__':
               'Topic :: Scientific/Engineering',
               'Topic :: Text Processing :: Linguistic',
           ],
-          keywords='phonetics acoustics similarity',
+          keywords='phonetics, acoustics similarity',
           url='https://github.com/mmcauliffe/Conch',
           download_url='https://github.com/mmcauliffe/Conch/tarball/{}'.format(
               conch.__version__),
