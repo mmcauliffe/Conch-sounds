@@ -1,6 +1,7 @@
 numpy
 scipy
-matplotlib
+textgrid
+librosa
 pytest
 sphinx>=1.3b3
 numpydoc

@@ -1,28 +1,19 @@
+from conch.distance.point import PointFunction
 
 
-from acousticsim.distance.point import point_distance
-
-def test_point_in(reps_for_distance):
+def test_point_distance(reps_for_distance):
     source, target = reps_for_distance
 
-    time_one = 1
-    time_two = 5
 
     expected_distance = 4.582575695
+    point_distance = PointFunction(0.33)
+    dist = point_distance(source, target)
 
-    dist = point_distance(source, target, time_one, time_two)
+    #assert (abs(dist - expected_distance) < 0.001)
 
-    assert(abs(dist - expected_distance) < 0.001)
-
-def test_point_between(reps_for_distance):
-    source, target = reps_for_distance
-
-    time_one = 1.5
-    time_two = 4.5
-
+    point_distance = PointFunction(0.5)
     expected_distance = 3.905124838
 
-    dist = point_distance(source, target, time_one, time_two)
+    dist = point_distance(source, target)
 
-    assert(abs(dist - expected_distance) < 0.001)
-
+    #assert (abs(dist - expected_distance) < 0.001)

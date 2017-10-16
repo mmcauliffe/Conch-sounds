@@ -1,5 +1,5 @@
-python-acoustic-similarity
-==================
+Conch
+=====
 
 [![Build Status](https://travis-ci.org/mmcauliffe/python-acoustic-similarity.svg?branch=master)](https://travis-ci.org/mmcauliffe/python-acoustic-similarity)[![Coverage Status](https://coveralls.io/repos/mmcauliffe/python-acoustic-similarity/badge.svg)](https://coveralls.io/r/mmcauliffe/python-acoustic-similarity)
 [![PyPI version](https://badge.fury.io/py/acousticsim.svg)](https://badge.fury.io/py/acousticsim)
@@ -19,7 +19,7 @@ Installation
 
 The latest released version can be installed via:
 
-`pip install acousticsim`
+`pip install conch`
 
 Alternatively, you can install the package from the source:
 

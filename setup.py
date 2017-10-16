@@ -3,9 +3,7 @@ import os
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
-import multiprocessing
-
-import acousticsim
+import conch
 
 
 def readme():
@@ -29,8 +27,8 @@ class PyTest(TestCommand):
 
 
 if __name__ == '__main__':
-    setup(name='acousticsim',
-          version=acousticsim.__version__,
+    setup(name='conch',
+          version=conch.__version__,
           description='Analyze acoustic similarity in Python',
           classifiers=[
               'Development Status :: 3 - Alpha',
@@ -41,31 +39,31 @@ if __name__ == '__main__':
               'Topic :: Text Processing :: Linguistic',
           ],
           keywords='phonetics acoustics similarity',
-          url='https://github.com/mmcauliffe/python-acoustic-similarity',
-          download_url='https://github.com/mmcauliffe/python-acoustic-similarity/tarball/{}'.format(
-              acousticsim.__version__),
+          url='https://github.com/mmcauliffe/Conch',
+          download_url='https://github.com/mmcauliffe/Conch/tarball/{}'.format(
+              conch.__version__),
           author='Michael McAuliffe',
           author_email='michael.e.mcauliffe@gmail.com',
-          packages=['acousticsim',
-                    'acousticsim.analysis',
-                    'acousticsim.analysis.amplitude_envelopes',
-                    'acousticsim.analysis.formants',
-                    'acousticsim.analysis.intensity',
-                    'acousticsim.analysis.mfcc',
-                    'acousticsim.analysis.mhec',
-                    'acousticsim.analysis.pitch',
-                    'acousticsim.analysis.praat',
-                    'acousticsim.distance',
-                    'acousticsim.representations'],
-          package_data={'acousticsim.analysis.pitch': ['*.praat'],
-                        'acousticsim.analysis.formants': ['*.praat'],
-                        'acousticsim.analysis.intensity': ['*.praat'],
-                        'acousticsim.analysis.mfcc': ['*.praat']},
+          packages=['conch',
+                    'conch.analysis',
+                    'conch.analysis.amplitude_envelopes',
+                    'conch.analysis.formants',
+                    'conch.analysis.intensity',
+                    'conch.analysis.mfcc',
+                    'conch.analysis.mhec',
+                    'conch.analysis.pitch',
+                    'conch.analysis.praat',
+                    'conch.distance'],
+          package_data={'conch.analysis.pitch': ['*.praat'],
+                        'conch.analysis.formants': ['*.praat'],
+                        'conch.analysis.intensity': ['*.praat'],
+                        'conch.analysis.mfcc': ['*.praat']},
           install_requires=[
               'numpy',
               'scipy',
               'textgrid',
-              'librosa'
+              'librosa',
+              'pyraat'
           ],
           cmdclass={'test': PyTest},
           extras_require={

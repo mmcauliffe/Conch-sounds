@@ -2,7 +2,7 @@
 import os
 import pytest
 
-from acousticsim.io import load_path_mapping
+from conch.io import load_path_mapping
 
 
 def test_valid(test_dir):

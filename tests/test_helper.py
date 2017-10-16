@@ -6,7 +6,7 @@ import unittest
 import pytest
 import os
 
-from acousticsim.analysis.helper import preproc
+from conch.analysis.helper import preproc
 
 from scipy.io import loadmat
 

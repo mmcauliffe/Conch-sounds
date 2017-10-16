@@ -2,13 +2,10 @@ import pytest
 import os
 import sys
 
-from acousticsim.utils import concatenate_files
-from acousticsim.representations.base import Representation
+from conch.utils import concatenate_files
 
-from acousticsim.analysis.pitch.reaper import signal_to_pitch_reaper
-
-from acousticsim.analysis.formants import signal_to_formants
-from acousticsim.analysis.pitch.autocorrelation import signal_to_pitch
+from conch.analysis.formants import FormantTrackFunction
+from conch.analysis.pitch.autocorrelation import PitchTrackFunction
 
 from functools import partial
 
@@ -29,6 +26,11 @@ def do_long_tests():
 def test_dir():
     base = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base, 'data')  # was tests/data
+
+
+@pytest.fixture(scope='session')
+def praat_script_test_dir(test_dir):
+    return os.path.join(test_dir, 'praat_scripts')
 
 
 @pytest.fixture(scope='session')
@@ -78,9 +80,7 @@ def base_filenames(soundfiles_dir):
 
 @pytest.fixture(scope='session')
 def praatpath():
-    if sys.platform == 'win32':
-        return 'praatcon.exe'
-    elif os.environ.get('TRAVIS'):
+    if os.environ.get('TRAVIS'):
         return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
     return 'praat'
 
@@ -94,30 +94,30 @@ def reaperpath():
 
 @pytest.fixture(scope='session')
 def reaper_func(reaperpath):
-    return partial(signal_to_pitch_reaper, reaper_path=reaperpath, time_step=0.01,
-                   min_pitch=50, max_pitch=500)
+    from conch.analysis.pitch.reaper import ReaperPitchTrackFunction
+    return ReaperPitchTrackFunction(reaper_path=reaperpath)
 
 
 @pytest.fixture(scope='session')
 def formants_func():
-    return partial(signal_to_formants, max_freq=5000, time_step=0.01, num_formants=5,
-                   win_len=0.025)
+    func = FormantTrackFunction(max_frequency=5000, time_step=0.01, num_formants=5,
+                                window_length=0.025)
+    return func
 
 
 @pytest.fixture(scope='session')
 def pitch_func():
-    return partial(signal_to_pitch, min_pitch=50, max_pitch=500, time_step=0.01)
+    func = PitchTrackFunction(min_pitch=50, max_pitch=500, time_step=0.01)
+    return func
 
 
 @pytest.fixture(scope='session')
 def reps_for_distance():
-    source = Representation(None, None, None)
-    source.data = {1: [2, 3, 4],
+    source = {1: [2, 3, 4],
                    2: [5, 6, 7],
                    3: [2, 7, 6],
                    4: [1, 5, 6]}
-    target = Representation(None, None, None)
-    target.data = {1: [5, 6, 7],
+    target = {1: [5, 6, 7],
                    2: [2, 3, 4],
                    3: [6, 8, 3],
                    4: [2, 7, 9],
