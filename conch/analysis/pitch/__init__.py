@@ -1,4 +1,4 @@
-from .autocorrelation import signal_to_pitch, file_to_pitch
+from .autocorrelation import PitchTrackFunction
 
 from .praat import PraatPitchTrackFunction
 

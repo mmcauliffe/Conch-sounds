@@ -1,13 +1,14 @@
-
 import librosa
 import numpy as np
 import scipy as sp
 from scipy.signal import lfilter
 
-from scipy.fftpack import fft,ifft
+from scipy.fftpack import fft, ifft
 from scipy.signal import gaussian
 
-from ..helper import fix_time_points, nextpow2
+from ..helper import nextpow2
+from ..functions import BaseAnalysisFunction
+
 
 def lpc_ref(signal, order):
     """Compute the Linear Prediction Coefficients.
@@ -42,13 +43,14 @@ def lpc_ref(signal, order):
         # coefficients
         nx = np.min([p, signal.size])
         x = np.correlate(signal, signal, 'full')
-        r[:nx] = x[signal.size-1:signal.size+order]
+        r[:nx] = x[signal.size - 1:signal.size + order]
         phi = np.dot(sp.linalg.inv(sp.linalg.toeplitz(r[:-1])), -r[1:])
         return np.concatenate(([1.], phi))
     else:
-        return np.ones(1, dtype = 'float32')
+        return np.ones(1, dtype='float32')
 
-#@jit
+
+# @jit
 def levinson_1d(r, order):
     """Levinson-Durbin recursion, to efficiently solve symmetric linear systems
     with toeplitz structure.
@@ -90,42 +92,44 @@ def levinson_1d(r, order):
 
     if not np.isreal(r[0]):
         raise ValueError("First item of input must be real.")
-    elif not np.isfinite(1/r[0]):
+    elif not np.isfinite(1 / r[0]):
         raise ValueError("First item should be != 0")
 
     # Estimated coefficients
-    a = np.empty(order+1, 'float32')
+    a = np.empty(order + 1, 'float32')
     # temporary array
-    t = np.empty(order+1, 'float32')
+    t = np.empty(order + 1, 'float32')
     # Reflection coefficients
     k = np.empty(order, 'float32')
 
     a[0] = 1.
     e = r[0]
 
-    for i in range(1, order+1):
+    for i in range(1, order + 1):
         acc = r[i]
         for j in range(1, i):
-            acc += a[j] * r[i-j]
-        k[i-1] = -acc / e
-        a[i] = k[i-1]
+            acc += a[j] * r[i - j]
+        k[i - 1] = -acc / e
+        a[i] = k[i - 1]
 
         for j in range(order):
             t[j] = a[j]
 
         for j in range(1, i):
-            a[j] += k[i-1] * np.conj(t[i-j])
+            a[j] += k[i - 1] * np.conj(t[i - j])
 
-        e *= 1 - k[i-1] * np.conj(k[i-1])
+        e *= 1 - k[i - 1] * np.conj(k[i - 1])
 
     return a, e, k
 
-#@jit
-def _acorr_last_axis(x, nfft, maxlag):
-    a = np.real(ifft(np.abs(fft(x, n = nfft) ** 2)))
-    return a[..., :maxlag+1] / x.shape[-1]
 
-#@jit
+# @jit
+def _acorr_last_axis(x, nfft, maxlag):
+    a = np.real(ifft(np.abs(fft(x, n=nfft) ** 2)))
+    return a[..., :maxlag + 1] / x.shape[-1]
+
+
+# @jit
 def acorr_lpc(x, axis=-1):
     """Compute autocorrelation of x along the given axis.
 
@@ -148,7 +152,8 @@ def acorr_lpc(x, axis=-1):
         a = np.swapaxes(a, -1, axis)
     return a
 
-#@jit
+
+# @jit
 def lpc(signal, order, axis=-1):
     """Compute the Linear Prediction Coefficients.
 
@@ -192,7 +197,7 @@ def lpc(signal, order, axis=-1):
 
 def process_frame(X, window, num_formants, new_sr):
     X = X * window
-    A, e, k  = lpc(X, num_formants*2)
+    A, e, k = lpc(X, num_formants * 2)
 
     rts = np.roots(A)
     rts = rts[np.where(np.imag(rts) >= 0)]
@@ -205,7 +210,7 @@ def process_frame(X, window, num_formants, new_sr):
 
 
 def lpc_formants(signal, sr, num_formants, max_freq, time_step,
-                    win_len, window_shape = 'gaussian'):
+                 win_len, window_shape='gaussian'):
     output = {}
     new_sr = 2 * max_freq
     alpha = np.exp(-2 * np.pi * 50 * (1 / new_sr))
@@ -240,18 +245,10 @@ def lpc_formants(signal, sr, num_formants, max_freq, time_step,
     return output
 
 
-def signal_to_formants(signal, sr, num_formants=5, max_freq=5000,
-                    time_step=0.01, win_len=0.025,
-                    begin=None, padding=None):
-
-    output = lpc_formants(signal, sr, num_formants, max_freq, time_step,
-                          win_len, window_shape='gaussian')
-    duration = signal.shape[0] / sr
-    return fix_time_points(output, begin, padding, duration)
-
-
-def file_to_formants(file_path, num_formants, max_freq, win_len, time_step):
-    sig, sr = librosa.load(file_path, sr=None, mono=False)
-
-    output = signal_to_formants(sig, sr, num_formants, max_freq, win_len, time_step)
-    return output
+class FormantTrackFunction(BaseAnalysisFunction):
+    def __init__(self, num_formants=5, max_frequency=5000,
+                 time_step=0.01, window_length=0.025, window_shape='gaussian'):
+        super(FormantTrackFunction, self).__init__()
+        self.arguments = [num_formants, max_frequency, time_step, window_length, window_shape]
+        self._function = lpc_formants
+        self.requires_file = False

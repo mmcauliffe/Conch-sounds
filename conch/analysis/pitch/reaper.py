@@ -1,10 +1,12 @@
 import subprocess
 import os
+from functools import partial
 
 from ..helper import fix_time_points, ASTemporaryWavFile
+from ..functions import BaseAnalysisFunction
 
 
-def call_reaper(file_path, reaper_path, time_step=0.01, min_pitch=75, max_pitch=600):
+def call_reaper(file_path, time_step=0.01, min_pitch=75, max_pitch=600, reaper_path=None):
     directory = os.path.dirname(file_path)
     base = os.path.basename(file_path)
     name = os.path.splitext(base)[0]
@@ -16,7 +18,6 @@ def call_reaper(file_path, reaper_path, time_step=0.01, min_pitch=75, max_pitch=
         com.extend(['-m', str(min_pitch)])
     if max_pitch is not None:
         com.extend(['-x', str(max_pitch)])
-    print(com)
     with open(os.devnull, 'w') as devnull:
         subprocess.call(com, stdout=devnull, stderr=devnull)
     output = parse_output(output_path)
@@ -24,7 +25,7 @@ def call_reaper(file_path, reaper_path, time_step=0.01, min_pitch=75, max_pitch=
     return output
 
 
-def call_reaper_with_pulses(file_path, reaper_path, time_step=0.01, min_pitch=75, max_pitch=600):
+def call_reaper_with_pulses(file_path, time_step=0.01, min_pitch=75, max_pitch=600, reaper_path=None):
     directory = os.path.dirname(file_path)
     base = os.path.basename(file_path)
     name = os.path.splitext(base)[0]
@@ -46,8 +47,10 @@ def call_reaper_with_pulses(file_path, reaper_path, time_step=0.01, min_pitch=75
     return output, pulse_output
 
 
-class ReaperPitchTrackFunction(object):
+class ReaperPitchTrackFunction(BaseAnalysisFunction):
     def __init__(self, reaper_path=None, time_step=0.01, min_pitch=75, max_pitch=600, with_pulses=False):
+        super(ReaperPitchTrackFunction, self).__init__()
+        self.requires_file = True
         if not reaper_path:
             reaper_path = 'reaper'
         self.reaper_path = reaper_path
@@ -55,25 +58,9 @@ class ReaperPitchTrackFunction(object):
         self.with_pulses = with_pulses
         self.uses_segments = False
         if self.with_pulses:
-            self._function = call_reaper_with_pulses
+            self._function = partial(call_reaper_with_pulses, reaper_path=reaper_path)
         else:
-            self._function = call_reaper
-
-    def __call__(self, *args, **kwargs):
-        first_arg = args[0]
-        args = args[1:]
-        if isinstance(first_arg, (tuple, list)):
-            signal, sr = first_arg[:2]
-            begin = kwargs.get('begin', None)
-            padding = kwargs.get('padding', None)
-            with ASTemporaryWavFile(signal, sr) as wav_path:
-                output = self._function(wav_path, self.reaper_path, *args)
-            if begin is not None:
-                duration = signal.shape[0] / sr
-                output = fix_time_points(output, begin, padding, duration)
-            return output
-
-        return self._function(first_arg, self.reaper_path, *args)
+            self._function = partial(call_reaper, reaper_path=reaper_path)
 
 
 def parse_output(output_file):

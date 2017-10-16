@@ -1,13 +1,12 @@
-
 import numpy as np
 import librosa
 
 from ..specgram import signal_to_powerspec
 from ..helper import mel_to_freq, freq_to_mel
 
-from conch.exceptions import MfccError
+from ...exceptions import MfccError
 
-from conch.exceptions import AcousticSimError
+from ..functions import BaseAnalysisFunction
 
 
 def dct_spectrum(spec):
@@ -27,9 +26,9 @@ def dct_spectrum(spec):
     ncep = spec.shape[0]
     dctm = np.zeros((ncep, ncep))
     for i in range(ncep):
-        dctm[i,:] = np.cos(i * np.arange(1,2*ncep,2)/(2*ncep) * np.pi) * np.sqrt(2/ncep)
+        dctm[i, :] = np.cos(i * np.arange(1, 2 * ncep, 2) / (2 * ncep) * np.pi) * np.sqrt(2 / ncep)
     dctm *= 0.230258509299405
-    cep =  np.dot(dctm , (10 * np.log10(spec + np.spacing(1))))
+    cep = np.dot(dctm, (10 * np.log10(spec + np.spacing(1))))
     return cep
 
 
@@ -53,7 +52,7 @@ def construct_filterbank(num_filters, nfft, sr, min_freq, max_freq):
     max_mel = freq_to_mel(max_freq)
     mel_points = np.linspace(min_mel, max_mel, num_filters + 2)
     bin_freqs = mel_to_freq(mel_points)
-    #bins = round((nfft - 1) * bin_freqs / sr)
+    # bins = round((nfft - 1) * bin_freqs / sr)
 
     fftfreqs = np.arange(int(nfft / 2 + 1)) / nfft * sr
 
@@ -67,9 +66,8 @@ def construct_filterbank(num_filters, nfft, sr, min_freq, max_freq):
     return fbank.transpose()
 
 
-def signal_to_mfcc(signal, sr, win_len, time_step, min_freq=80, max_freq=7800,
+def generate_mfccs(signal, sr, win_len, time_step, min_freq=80, max_freq=7800,
                    num_filters=26, num_coeffs=13, use_power=True, deltas=False, debug=False):
-
     L = 22
     n = np.arange(num_filters)
     lift = 1 + (L / 2) * np.sin(np.pi * n / L)
@@ -81,7 +79,8 @@ def signal_to_mfcc(signal, sr, win_len, time_step, min_freq=80, max_freq=7800,
         nfft = (len(next(iter(pspec.values()))) - 1) * 2
     except StopIteration:
         duration = len(signal) / sr
-        raise (MfccError('The signal is too short to process (duration: {}; window size: {}).'.format(duration, win_len)))
+        raise (
+        MfccError('The signal is too short to process (duration: {}; window size: {}).'.format(duration, win_len)))
     filterbank = construct_filterbank(num_filters, nfft, sr, min_freq, max_freq)
 
     output = {}
@@ -115,11 +114,10 @@ def signal_to_mfcc(signal, sr, win_len, time_step, min_freq=80, max_freq=7800,
     return output
 
 
-def file_to_mfcc(file_path, win_len, time_step,  min_freq=80, max_freq=7800,
-                 num_filters=26, num_coeffs=13, use_power=True, deltas=False):
-    signal, sr = librosa.load(file_path, sr=None, mono=False)
-
-    output = signal_to_mfcc(signal, sr, win_len, time_step, min_freq, max_freq,
-                            num_filters, num_coeffs, use_power, deltas, debug=False)
-    return output
-
+class MfccFunction(BaseAnalysisFunction):
+    def __init__(self, window_length=0.025, time_step=0.01, min_frequency=80, max_frequency=7800,
+                 num_filters=26, num_coefficients=13, use_power=True, deltas=False):
+        super(MfccFunction, self).__init__()
+        self.arguments = [window_length, time_step, min_frequency, max_frequency,
+                          num_filters, num_coefficients, use_power, deltas]
+        self._function = generate_mfccs

@@ -1,11 +1,12 @@
 import numpy as np
 import librosa
 
-from scipy.signal import filtfilt,butter,hilbert
+from scipy.signal import filtfilt, butter, hilbert
 
 from librosa import resample
 
 from ..helper import preemphasize
+from ..functions import BaseAnalysisFunction
 
 
 def window_envelopes(env, win_len, time_step):
@@ -15,8 +16,8 @@ def window_envelopes(env, win_len, time_step):
     if nperseg % 2 != 0:
         nperseg -= 1
     nperstep = int(time_step * env.sampling_rate)
-    window = np.hanning(nperseg+2)[1:nperseg+1]
-    halfperseg = int(nperseg/2)
+    window = np.hanning(nperseg + 2)[1:nperseg + 1]
+    halfperseg = int(nperseg / 2)
 
     print(nperseg, halfperseg)
     num_samps, num_bands = env.shape
@@ -24,11 +25,11 @@ def window_envelopes(env, win_len, time_step):
     indices = np.arange(halfperseg, num_samps - halfperseg + 1, nperstep)
     num_frames = len(indices)
     print(indices)
-    rep = np.zeros((num_frames,num_bands))
+    rep = np.zeros((num_frames, num_bands))
     new_rep = dict()
     for i in range(num_frames):
         print(indices[i])
-        time_key = indices[i]/env.sampling_rate
+        time_key = indices[i] / env.sampling_rate
         rep_line = list()
         print(indices[i] - halfperseg, indices[i] + halfperseg)
         array = env[indices[i] - halfperseg, indices[i] + halfperseg]
@@ -41,18 +42,25 @@ def window_envelopes(env, win_len, time_step):
     return env
 
 
-def signal_to_amplitude_envelopes(signal, sr, num_bands, min_freq, max_freq, mode='downsample'):
+class AmplitudeEnvelopeFunction(BaseAnalysisFunction):
+    def __init__(self, num_bands=8, min_frequency=80, max_frequency=7800, mode='downsample'):
+        super(AmplitudeEnvelopeFunction, self).__init__()
+        self.arguments = [num_bands, min_frequency, max_frequency, mode]
+        self._function = generate_amplitude_envelopes
+
+
+def generate_amplitude_envelopes(signal, sr, num_bands, min_frequency, max_frequency, mode='downsample'):
     signal = preemphasize(signal, 0.97)
     proc = signal / np.sqrt(np.mean(signal ** 2)) * 0.03
 
-    bandLo = [min_freq * np.exp(np.log(max_freq / min_freq) / num_bands) ** x
-              for x in range(num_bands)]
-    bandHi = [min_freq * np.exp(np.log(max_freq / min_freq) / num_bands) ** (x + 1)
-              for x in range(num_bands)]
+    band_mins = [min_frequency * np.exp(np.log(max_frequency / min_frequency) / num_bands) ** x
+                 for x in range(num_bands)]
+    band_maxes = [min_frequency * np.exp(np.log(max_frequency / min_frequency) / num_bands) ** (x + 1)
+                  for x in range(num_bands)]
 
     envs = []
     for i in range(num_bands):
-        b, a = butter(2, (bandLo[i] / (sr / 2), bandHi[i] / (sr / 2)), btype='bandpass')
+        b, a = butter(2, (band_mins[i] / (sr / 2), band_maxes[i] / (sr / 2)), btype='bandpass')
         env = filtfilt(b, a, proc)
         env = abs(hilbert(env))
         if mode == 'downsample':
@@ -64,11 +72,4 @@ def signal_to_amplitude_envelopes(signal, sr, num_bands, min_freq, max_freq, mod
     output = dict()
     for i in range(envs.shape[0]):
         output[i / sr] = envs[i, :]
-    return output
-
-
-def file_to_amplitude_envelopes(file_path, num_bands, min_freq, max_freq, mode='downsample'):
-    signal, sr = librosa.load(file_path, sr=None, mono=False)
-
-    output = signal_to_amplitude_envelopes(signal, sr, num_bands, min_freq, max_freq, mode)
     return output

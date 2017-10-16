@@ -1,6 +1,7 @@
 import librosa
-from numpy import log10, arange, hanning,log, correlate, max, mean, maximum, inf
+from numpy import log10, arange, hanning, log, correlate, max, mean, maximum, inf
 from scipy.signal import gaussian, argrelmax
+from ..functions import BaseAnalysisFunction
 
 
 def find_best_path(candidate_matrix, num_candidates, voice_change_cost, octave_jump_cost):
@@ -37,11 +38,11 @@ def find_best_path(candidate_matrix, num_candidates, voice_change_cost, octave_j
                 continue
             for y0 in range(num_candidates):
                 try:
-                    cost = V[t-1][y0]
-                    cost += transition_cost(candidate_matrix[t-1][y0][0],
+                    cost = V[t - 1][y0]
+                    cost += transition_cost(candidate_matrix[t - 1][y0][0],
                                             freq)
                     cost -= r
-                except (IndexError,KeyError):
+                except (IndexError, KeyError):
                     continue
 
                 if cost < best:
@@ -52,7 +53,7 @@ def find_best_path(candidate_matrix, num_candidates, voice_change_cost, octave_j
 
         # Don't need to remember the old paths
         path = newpath
-    n = 0           # if only one element is observed max is sought in the initialization values
+    n = 0  # if only one element is observed max is sought in the initialization values
     if num_frames != 1:
         n = t
     best = inf
@@ -63,21 +64,21 @@ def find_best_path(candidate_matrix, num_candidates, voice_change_cost, octave_j
         except KeyError:
             continue
         if c < best:
-            best =c
+            best = c
             state = y
     return path[state]
 
 
 def ac_pitch(signal, sr, time_step, min_pitch, max_pitch,
-                    #Praat parameters
-                    window_shape='gaussian',
-                    sil_thresh=0.03,
-                    voice_thresh=0.45,
-                    octave_cost=0.01,
-                    octave_jump_cost=0.35,
-                    voice_change_cost=0.14,
-                    num_candidates=15,
-                    periods_per_window=3):
+             # Praat parameters
+             window_shape='gaussian',
+             sil_thresh=0.03,
+             voice_thresh=0.45,
+             octave_cost=0.01,
+             octave_jump_cost=0.35,
+             voice_change_cost=0.14,
+             num_candidates=15,
+             periods_per_window=3):
     win_len = periods_per_window / min_pitch
     if window_shape == 'gaussian':
         win_len *= 2
@@ -133,36 +134,24 @@ def ac_pitch(signal, sr, time_step, min_pitch, max_pitch,
     return output
 
 
-def signal_to_pitch(signal, sr, time_step, min_pitch, max_pitch, begin = None, padding = None):
-    output = ac_pitch(signal, sr, time_step, min_pitch, max_pitch)
-    duration = signal.shape[0] / sr
-    if begin is not None:
-        if padding is not None:
-            begin -= padding
-        real_output = {}
-        for k, v in output.items():
-            if padding is not None and (k < padding or k > duration - padding):
-                continue
-            real_output[k + begin] = v
-        return real_output
+class PitchTrackFunction(BaseAnalysisFunction):
+    def __init__(self, time_step=0.01, min_pitch=50, max_pitch=500):
+        super(PitchTrackFunction, self).__init__()
+        self.arguments = [time_step, min_pitch, max_pitch]
+        self.requires_file = False
+        self._function = ac_pitch
 
-
-def file_to_pitch(file_path, time_step, min_pitch, max_pitch):
-    signal, sr = librosa.load(file_path, sr = None, mono = False)
-
-    output = ac_pitch(signal, sr, time_step, min_pitch, max_pitch)
-    return output
 
 def ac_harmonicity(signal, sr, time_step, min_pitch, max_pitch,
-                    #Praat parameters
-                    window_shape='gaussian',
-                    sil_thresh=0.03,
-                    voice_thresh=0.45,
-                    octave_cost=0.01,
-                    octave_jump_cost=0.35,
-                    voice_change_cost=0.14,
-                    num_candidates=15,
-                    periods_per_window=3):
+                   # Praat parameters
+                   window_shape='gaussian',
+                   sil_thresh=0.03,
+                   voice_thresh=0.45,
+                   octave_cost=0.01,
+                   octave_jump_cost=0.35,
+                   voice_change_cost=0.14,
+                   num_candidates=15,
+                   periods_per_window=3):
     win_len = periods_per_window / min_pitch
     if window_shape == 'gaussian':
         win_len *= 2
@@ -205,18 +194,3 @@ def ac_harmonicity(signal, sr, time_step, min_pitch, max_pitch,
             # plt.show()
         output[indices[i] / sr] = [10 * log10(r / (1 - r))]
     return output
-
-
-
-
-
-def to_pitch_zcd(gt):
-    pass
-#    import matplotlib.pyplot as plt
-#    print(gt.shape)
-#    nsamps = gt.shape[0]
-#    nbands = get.shape[1]
-#    for i in range(1,nsamps-1):
-#        pass
-#    plt.plot(gt)
-#    plt.show()

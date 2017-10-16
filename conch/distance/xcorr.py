@@ -1,51 +1,42 @@
 import numpy as np
-from numpy import log, sqrt, sum, correlate,argmax
-#from scipy.signal import correlate,correlate2d,fftconvolve
-#from numba import jit
+from numpy import log, sqrt, sum, correlate, argmax
 
-#@jit
-def xcorr_distance(rep_one,rep_two):
+from .base import DistanceFunction
+
+
+class XcorrFunction(DistanceFunction):
+    def __init__(self):
+        super(XcorrFunction, self).__init__()
+        self._function = xcorr_distance
+
+
+def xcorr_distance(rep_one, rep_two):
     if not isinstance(rep_one, np.ndarray):
         rep_one = rep_one.to_array()
     if not isinstance(rep_two, np.ndarray):
         rep_two = rep_two.to_array()
-    assert(rep_one.shape[1] == rep_two.shape[1])
+    assert (rep_one.shape[1] == rep_two.shape[1])
     length_diff = rep_one.shape[0] - rep_two.shape[0]
     if length_diff > 0:
-        longerRep = rep_one
-        shorterRep = rep_two
+        longer_rep = rep_one
+        shorter_rep = rep_two
     else:
-        longerRep = rep_two
-        shorterRep = rep_one
-    num_bands = longerRep.shape[1]
-    matchSum = 0
+        longer_rep = rep_two
+        shorter_rep = rep_one
+    num_bands = longer_rep.shape[1]
+    match_sum = 0
     for i in range(num_bands):
-        longerBand = longerRep[:,i]
-        denom = sqrt(sum(longerBand**2))
-        if denom != 0:
-            longerBand = longerBand/denom
-        shorterBand = shorterRep[:,i]
-        denom = sqrt(sum(shorterBand**2))
-        if denom != 0:
-            shorterBand = shorterBand/denom
-        temp = correlate(longerBand,shorterBand,mode='valid')
-        matchSum += temp
-    maxInd = argmax(matchSum)
-    matchVal = abs(matchSum[maxInd]/num_bands)
-    return 1/matchVal
+        longer_band = longer_rep[:, i]
+        denominator = sqrt(sum(longer_band ** 2))
+        if denominator != 0:
+            longer_band = longer_band / denominator
+        shorter_band = shorter_rep[:, i]
+        denominator = sqrt(sum(shorter_band ** 2))
+        if denominator != 0:
+            shorter_band = shorter_band / denominator
+        temp = correlate(longer_band, shorter_band, mode='valid')
+        match_sum += temp
+    max_index = argmax(match_sum)
+    match_value = abs(match_sum[max_index] / num_bands)
+    return 1 / match_value
 
-#def fft_correlate_envelopes(e1,e2):
-    #length_diff = e1.shape[0] - e2.shape[0]
-    #if length_diff > 0:
-        #longerEnv = e1
-        #shorterEnv = e2
-    #else:
-        #longerEnv = e2
-        #shorterEnv = e1
-    #num_bands = longerEnv.shape[1]
-    #matchSum = fftconvolve(longerEnv[:,0],shorterEnv[:,0][::-1],mode='valid')
-    #for i in range(1,num_bands):
-        #temp = fftconvolve(longerEnv[:,i],shorterEnv[:,i][::-1],mode='valid')
-        #matchSum = [matchSum[j] + temp[j] for j in range(len(matchSum))]
-    #matchVal = max(matchSum)/num_bands
-    #return matchVal

@@ -1,5 +1,7 @@
 
 
-from .lpc import file_to_formants, signal_to_formants
+from .lpc import FormantTrackFunction
 
 from .praat import PraatFormantTrackFunction
+
+
