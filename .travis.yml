@@ -1,6 +1,6 @@
 language: python
 python:
-  - 3.5
+  - 3.6
 branches:
   only:
     - master
@@ -25,7 +25,7 @@ install:
 
 # Run test
 script:
-  - "coverage run --source=acousticsim setup.py test"
+  - "coverage run --source=conch setup.py test"
 
 # Calculate coverage
 after_success:
