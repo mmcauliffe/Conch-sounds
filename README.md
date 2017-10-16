@@ -1,8 +1,9 @@
 Conch
 =====
 
-[![Build Status](https://travis-ci.org/mmcauliffe/python-acoustic-similarity.svg?branch=master)](https://travis-ci.org/mmcauliffe/python-acoustic-similarity)[![Coverage Status](https://coveralls.io/repos/mmcauliffe/python-acoustic-similarity/badge.svg)](https://coveralls.io/r/mmcauliffe/python-acoustic-similarity)
-[![PyPI version](https://badge.fury.io/py/acousticsim.svg)](https://badge.fury.io/py/acousticsim)
+[![Build Status](https://travis-ci.org/mmcauliffe/Conch.svg?branch=master)](https://travis-ci.org/mmcauliffe/Conch)
+[![Coverage Status](https://coveralls.io/repos/github/mmcauliffe/Conch/badge.svg?branch=master)](https://coveralls.io/github/mmcauliffe/Conch?branch=master)
+[![PyPI version](https://badge.fury.io/py/conch.svg)](https://badge.fury.io/py/conch)
 [![DOI](https://zenodo.org/badge/9966944.svg)](https://zenodo.org/badge/latestdoi/9966944)
 
 This package contains functions for converting wav files into auditory 
@@ -34,13 +35,13 @@ Further information is available at http://www.scipy.org/install.html
 Higher level wrappers
 ==================
 
-In `acousticsim/main.py` there are several wrapper functions for convenience.
+In `conch/main.py` there are several wrapper functions for convenience.
 
 Each of these functions takes keyword arguments corresponding to how auditory
 representations should be constructed and what distance function to use.
 
 **acoustic_similarity_mapping** takes a mapping of paths as its argument.
-This argument should be a list of pairs or triplets of fully specified filenames.
+This argument should be a list of pairs or triplets of fully specified file names.
 Pairs will compute the distance between the two files, and triplets will compute
 an AXB style design, where distances are computed between the first element and the second and
 between the third element and the second.  In this case, the numerical output
