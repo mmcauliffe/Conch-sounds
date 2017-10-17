@@ -1,7 +1,7 @@
 import os
 from multiprocessing import cpu_count
 
-from conch.exceptions import AcousticSimError, NoWavError
+from conch.exceptions import ConchError, NoWavError
 from conch.multiprocessing import generate_cache, calculate_distances, calculate_axb_ratio
 
 from .analysis.segments import SegmentMapping
@@ -67,7 +67,7 @@ def acoustic_similarity_directories(directories, analysis_function, distance_fun
         files += [os.path.join(d, x) for x in os.listdir(d) if x.lower().endswith('.wav')]
 
     if len(files) == 0:
-        raise (AcousticSimError("The directories specified do not contain any wav files"))
+        raise (ConchError("The directories specified do not contain any wav files"))
 
     if call_back is not None:
         call_back('Mapping directories...')

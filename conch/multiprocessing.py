@@ -5,7 +5,7 @@ from multiprocessing import Process, Manager, Queue, cpu_count, Value, Lock, Joi
 import time
 from queue import Empty, Full
 
-from conch.exceptions import AcousticSimPythonError
+from conch.exceptions import ConchPythonError
 
 
 def default_njobs():
@@ -67,7 +67,7 @@ class AnalysisWorker(Process):
                 if self.ignore_errors:
                     continue
                 self.stopped.stop()
-                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
+                self.return_dict['error'] = ConchPythonError(traceback.format_exception(*sys.exc_info()))
 
         return
 
@@ -99,7 +99,7 @@ class DistanceWorker(Process):
                 self.return_dict[pm] = distance
             except Exception as e:
                 self.stopped.stop()
-                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
+                self.return_dict['error'] = ConchPythonError(traceback.format_exception(*sys.exc_info()))
 
         return
 
@@ -140,7 +140,7 @@ class AXBWorker(Process):
                 self.return_dict[pm] = ratio
             except Exception as e:
                 self.stopped.stop()
-                self.return_dict['error'] = AcousticSimPythonError(traceback.format_exception(*sys.exc_info()))
+                self.return_dict['error'] = ConchPythonError(traceback.format_exception(*sys.exc_info()))
         return
 
 

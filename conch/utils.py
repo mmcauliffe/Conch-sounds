@@ -1,22 +1,21 @@
-
 import wave
 import numpy as np
 from scipy.io import wavfile
 
 from .analysis.helper import preproc
 
-from .exceptions import AcousticSimError
 
 def write_wav(signal, sr, filepath):
     signal *= 32768
     wavfile.write(filepath, sr, signal.astype('int16'))
 
-def extract_audio(filepath, outpath, begin, end, padding = 0.1):
+
+def extract_audio(filepath, outpath, begin, end, padding=0.1):
     begin -= padding
     if begin < 0:
         begin = 0
     end += padding
-    with wave.open(filepath,'rb') as inf, wave.open(outpath, 'wb') as outf:
+    with wave.open(filepath, 'rb') as inf, wave.open(outpath, 'wb') as outf:
         params = inf.getparams()
         sample_rate = inf.getframerate()
         duration = inf.getnframes() / sample_rate
@@ -36,8 +35,8 @@ def concatenate_files(files):
     out = np.array([])
     for f in files:
         csr, proc = preproc(f)
-        #print(csr)
-        #if sr != csr:
+        # print(csr)
+        # if sr != csr:
         #    raise(AcousticSimError('Files for concatenation must have the same sampling rates.'))
-        out = np.append(out,proc)
+        out = np.append(out, proc)
     return out

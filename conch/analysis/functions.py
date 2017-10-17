@@ -1,6 +1,7 @@
 import librosa
 from .helper import fix_time_points, ASTemporaryWavFile
 from .segments import FileSegment, SignalSegment
+from ..exceptions import FunctionMismatch
 
 
 class BaseAnalysisFunction(object):
@@ -12,6 +13,8 @@ class BaseAnalysisFunction(object):
 
     def __call__(self, segment):
         if isinstance(segment, SignalSegment) and self.requires_file:
+            if self.uses_segments:
+                raise FunctionMismatch('Cannot analyze a SignalSegment with a function that uses segments.')
             begin, padding = segment['begin'], segment['padding']
             with ASTemporaryWavFile(segment.signal, segment.sr) as wav_path:
                 output = self._function(wav_path, *self.arguments)
@@ -66,5 +69,11 @@ class BaseAnalysisFunction(object):
             output = fix_time_points(output, segment.begin, padding, dur)
             return output
         elif isinstance(segment, FileSegment) and self.requires_file and self.uses_segments:
-            return self._function(segment.file_path, segment.begin, segment.end, segment.channel, *self.arguments)
+            padding = segment['padding']
+            if padding is None:
+                padding = 0
+            return self._function(segment.file_path, segment.begin, segment.end, segment.channel, padding, *self.arguments)
+        elif isinstance(segment, str) and self.uses_segments:
+
+            raise FunctionMismatch('A FileSegment must be specified to analyze using this function')
         return self._function(segment, *self.arguments)
