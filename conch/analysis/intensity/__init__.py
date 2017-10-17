@@ -1,1 +1,1 @@
-from .praat import PraatIntensityTrackFunction
+from .praat import PraatIntensityTrackFunction, PraatSegmentIntensityTrackFunction
