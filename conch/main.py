@@ -48,7 +48,6 @@ def acoustic_similarity_directories(directories, analysis_function, distance_fun
     """
 
     files = []
-    kwargs['attributes'] = dict()
 
     if call_back is not None:
         call_back('Mapping directories...')
