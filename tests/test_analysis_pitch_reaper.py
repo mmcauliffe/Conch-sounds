@@ -46,8 +46,8 @@ def test_pitch_reaper_pulses(noise_path, y_path, reaperpath):
     # assert pitch == pitch2
 
 
-def test_segment_pitch_track(acoustic_corpus_path):
-    func = ReaperPitchTrackFunction(time_step=0.01, min_pitch=75, max_pitch=600)
+def test_segment_pitch_track(acoustic_corpus_path, reaperpath):
+    func = ReaperPitchTrackFunction(reaper_path=reaperpath, time_step=0.01, min_pitch=75, max_pitch=600)
     segment = FileSegment(acoustic_corpus_path, 2.142, 2.245, 0, padding=0.1)
     pitch = func(segment)
     assert all(x >= 2.142 and x <= 2.245 for x in pitch.keys())
