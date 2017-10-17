@@ -1,7 +1,14 @@
 import librosa
+import os
 from .helper import fix_time_points, ASTemporaryWavFile
 from .segments import FileSegment, SignalSegment
 from ..exceptions import FunctionMismatch
+
+
+def safe_path(path):
+    if '~' in path:
+        return os.path.expanduser(path)
+    return path
 
 
 class BaseAnalysisFunction(object):
@@ -30,7 +37,7 @@ class BaseAnalysisFunction(object):
                 output = fix_time_points(output, begin, padding, duration)
             return output
         elif isinstance(segment, str) and not self.requires_file:
-            signal, sr = librosa.load(segment)
+            signal, sr = librosa.load(safe_path(segment))
             return self._function(signal, sr, *self.arguments)
         elif isinstance(segment, FileSegment) and self.requires_file and not self.uses_segments:
             beg, end = segment.begin, segment.end
@@ -41,7 +48,7 @@ class BaseAnalysisFunction(object):
                     beg = 0
                 end += padding
             dur = end - beg
-            signal, sr = librosa.load(segment.file_path, mono=False, offset=beg,
+            signal, sr = librosa.load(safe_path(segment.file_path), mono=False, offset=beg,
                                       duration=dur)
             if len(signal.shape) > 1:
                 signal = signal[:, segment.channel]
@@ -61,7 +68,7 @@ class BaseAnalysisFunction(object):
                     beg = 0
                 end += padding
             dur = end - beg
-            signal, sr = librosa.load(segment.file_path, mono=False, offset=beg,
+            signal, sr = librosa.load(safe_path(segment.file_path), mono=False, offset=beg,
                                       duration=dur)
             if len(signal.shape) > 1:
                 signal = signal[:, segment.channel]
@@ -72,8 +79,8 @@ class BaseAnalysisFunction(object):
             padding = segment['padding']
             if padding is None:
                 padding = 0
-            return self._function(segment.file_path, segment.begin, segment.end, segment.channel, padding, *self.arguments)
+            return self._function(safe_path(segment.file_path), segment.begin, segment.end, segment.channel, padding,
+                                  *self.arguments)
         elif isinstance(segment, str) and self.uses_segments:
-
             raise FunctionMismatch('A FileSegment must be specified to analyze using this function')
         return self._function(segment, *self.arguments)
