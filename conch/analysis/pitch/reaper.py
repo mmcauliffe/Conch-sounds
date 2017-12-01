@@ -18,8 +18,8 @@ def call_reaper(file_path, time_step=0.01, min_pitch=75, max_pitch=600, reaper_p
         com.extend(['-m', str(min_pitch)])
     if max_pitch is not None:
         com.extend(['-x', str(max_pitch)])
-    with open(os.devnull, 'w') as devnull:
-        subprocess.call(com, stdout=devnull, stderr=devnull)
+    proc = subprocess.Popen(com, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
     output = parse_output(output_path)
     os.remove(output_path)
     return output

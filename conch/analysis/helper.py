@@ -1,8 +1,6 @@
-from numpy import zeros, arange, argmin, min, abs, log2, ceil, floor, \
-    shape, float, mean, sqrt, log10, linspace, array, pad
-from numpy.fft import fft, ifft, rfft, irfft
-from scipy.signal import lfilter  # ,resample, decimate
-from scipy.interpolate import interp1d, InterpolatedUnivariateSpline
+import numpy as np
+from numpy.fft import fft, ifft
+from scipy.signal import lfilter
 from scipy.io import wavfile
 import librosa
 from tempfile import TemporaryDirectory, NamedTemporaryFile
@@ -11,7 +9,7 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 def nextpow2(x):
     """Return the first integer N such that 2**N >= abs(x)"""
 
-    return ceil(log2(abs(x)))
+    return np.ceil(np.log2(np.abs(x)))
 
 
 def extract_wav(path, outpath, begin_time, end_time):
@@ -75,7 +73,7 @@ def erb_rate_to_hz(x):
 
 
 def hz_to_erb_rate(x):
-    y = (21.4 * log10(4.37e-3 * x + 1))
+    y = (21.4 * np.log10(4.37e-3 * x + 1))
     return y
 
 
@@ -94,7 +92,7 @@ def freq_to_mel(freq):
 
     """
 
-    return 2595 * log10(1 + freq / 700.0)
+    return 2595 * np.log10(1 + freq / 700.0)
 
 
 def mel_to_freq(mel):
@@ -116,7 +114,7 @@ def mel_to_freq(mel):
 
 
 def make_erb_cfs(freq_lims, num_channels):
-    cfs = erb_rate_to_hz(linspace(hz_to_erb_rate(freq_lims[0]), hz_to_erb_rate(freq_lims[1]), num_channels))
+    cfs = erb_rate_to_hz(np.linspace(hz_to_erb_rate(freq_lims[0]), hz_to_erb_rate(freq_lims[1]), num_channels))
     return cfs
 
 
@@ -154,10 +152,10 @@ def fftfilt(b, x, *n):
             # cost of the overlap-add method for 1 length-N block is
             # N*(1+log2(N)). For the sake of efficiency, only FFT
             # lengths that are powers of 2 are considered:
-            N = 2 ** arange(ceil(log2(N_b)), floor(log2(N_x)))
-            cost = ceil(N_x / (N - N_b + 1)) * N * (log2(N) + 1)
+            N = 2 ** np.arange(np.ceil(np.log2(N_b)), np.floor(np.log2(N_x)))
+            cost = np.ceil(N_x / (N - N_b + 1)) * N * (np.log2(N) + 1)
             if len(cost) > 0:
-                N_fft = N[argmin(cost)]
+                N_fft = N[np.argmin(cost)]
             else:
                 N_fft = 2 ** nextpow2(N_b + N_x - 1)
 
@@ -175,11 +173,11 @@ def fftfilt(b, x, *n):
     # Compute the transform of the filter:
     H = fft(b, N_fft)
 
-    y = zeros(N_x, float)
+    y = np.zeros(N_x, np.float32)
     i = 0
     while i <= N_x:
-        il = min([i + L, N_x])
-        k = min([i + N_fft, N_x])
+        il = np.min([i + L, N_x])
+        k = np.min([i + N_fft, N_x])
         yt = ifft(fft(x[i:il], N_fft) * H, N_fft)  # Overlap..
         y[i:k] = y[i:k] + yt[:k - i]  # and add
         i += L
@@ -187,14 +185,25 @@ def fftfilt(b, x, *n):
 
 
 def fix_time_points(output, begin, padding, duration):
+    if isinstance(output, (list, tuple)):
+        return [fix_time_points(x, begin, padding, duration) for x in output]
     if begin is not None:
         if padding is not None:
             begin -= padding
-        real_output = {}
-        for k, v in output.items():
-            if padding is not None and (k < padding or k > duration - padding):
-                continue
-            real_output[k + begin] = v
+        if isinstance(output, dict):
+            real_output = {}
+            for k, v in output.items():
+                if padding is not None and (k < padding or k > duration - padding):
+                    continue
+                real_output[k + begin] = v
+        elif isinstance(output, set):
+            real_output = set()
+            for k in output:
+                if padding is not None and (k < padding or k > duration - padding):
+                    continue
+                real_output.add(k + begin)
+        else:
+            return output
         return real_output
     return output
 

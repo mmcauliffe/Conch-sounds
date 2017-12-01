@@ -12,7 +12,10 @@ def track_dict_to_array(data):
 
     output = np.zeros((len(times), frame_len))
     for i, t in enumerate(times):
-        output[i, :] = data[t]
+        d = data[t]
+        if isinstance(data[t], dict):
+            d = [v for k,v in sorted(data[t].items())]
+        output[i, :] = [x if x else 0 for x in d]
     return output
 
 

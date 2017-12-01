@@ -35,6 +35,35 @@ def acoustic_similarity_mapping(path_mapping, analysis_function, distance_functi
     asim = calculate_distances(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
     return asim
 
+def axb_mapping(path_mapping, analysis_function, distance_function, stop_check=None, call_back=None):
+    """Takes in an explicit mapping of full paths to .wav files to have
+    acoustic similarity computed.
+
+    Parameters
+    ----------
+    path_mapping : iterable of iterables
+        Explicit mapping of full paths of .wav files, in the form of a
+        list of tuples to be compared.
+
+
+    Returns
+    -------
+    dict
+        Returns a list of tuples corresponding to the `path_mapping` input,
+        with a new final element in the tuple being the similarity/distance
+        score for that mapping.
+
+    """
+
+    num_cores = int((3 * cpu_count()) / 4)
+    segments = set()
+    for x in path_mapping:
+        segments.update(x)
+    print(segments)
+    cache = generate_cache(segments, analysis_function, num_cores, call_back, stop_check)
+    asim = calculate_axb_ratio(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
+    return asim
+
 
 def acoustic_similarity_directories(directories, analysis_function, distance_function, stop_check=None, call_back=None):
     """
@@ -105,7 +134,7 @@ def acoustic_similarity_directory(directory, analysis_function, distance_functio
         if os.path.isdir(path):
             directories.append(path)
     if not wavs:
-        return acoustic_similarity_directories(*directories, analysis_function, distance_function, stop_check,
+        return acoustic_similarity_directories(directories, analysis_function, distance_function, stop_check,
                                                call_back)
 
     if call_back is not None:

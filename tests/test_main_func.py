@@ -3,9 +3,12 @@ import pytest
 from conch import (acoustic_similarity_mapping,
                    acoustic_similarity_directories,
                    analyze_segments,
-                   acoustic_similarity_directory, analyze_long_file)
+                   acoustic_similarity_directory, analyze_long_file,
+                   )
+from conch.main import axb_mapping
+from conch.io import load_path_mapping
 
-from conch.analysis import MfccFunction, FormantTrackFunction
+from conch.analysis import MfccFunction, FormantTrackFunction, PitchTrackFunction, PraatPitchTrackFunction
 from conch.distance import DtwFunction
 from conch.analysis.segments import SegmentMapping
 
@@ -15,11 +18,28 @@ slow = pytest.mark.skipif(
 )
 
 
+def test_acoustic_similarity_directories(tts_dir, call_back, praatpath):
+    func = PraatPitchTrackFunction(praat_path=praatpath)
+    dist_func = DtwFunction(norm=True)
+    scores = acoustic_similarity_directory(tts_dir, analysis_function=func, distance_function=dist_func,
+                                           call_back=call_back)
+
+
 # @slow
-def test_analyze_directory(soundfiles_dir, call_back):
+def test_acoustic_similarity_directory(soundfiles_dir, call_back):
+    func = PitchTrackFunction()
+    dist_func = DtwFunction(norm=True)
+    scores = acoustic_similarity_directory(soundfiles_dir, analysis_function=func, distance_function=dist_func,
+                                           call_back=call_back)
+
+
+def test_axb_mapping(axb_mapping_path):
+    path_mapping = load_path_mapping(axb_mapping_path)
+    assert len(path_mapping[0]) == 3
     func = MfccFunction()
     dist_func = DtwFunction(norm=True)
-    scores = acoustic_similarity_directory(soundfiles_dir, analysis_function=func, distance_function=dist_func)
+    scores = axb_mapping(path_mapping, func, dist_func)
+    print(scores)
 
 
 def test_analyze_long_file_reaper(acoustic_corpus_path, reaper_func):

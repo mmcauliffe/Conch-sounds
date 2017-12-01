@@ -1,5 +1,7 @@
 from conch.analysis.pitch.praat import PraatPitchTrackFunction, PraatSegmentPitchTrackFunction
 import librosa
+from statistics import mean
+from scipy.io import wavfile
 import pytest
 from conch.analysis.segments import FileSegment, SignalSegment
 from conch.exceptions import FunctionMismatch
@@ -18,6 +20,26 @@ def test_pitch_praat(praatpath, base_filenames):
 
         # Things are not exact...
         # assert pitch == pitch2
+
+def test_pitch_pulses_praat(praatpath, noise_path, y_path):
+    func = PraatPitchTrackFunction(praat_path=praatpath, time_step=0.01, min_pitch=75, max_pitch=600,
+                                    with_pulses=True)
+    pitch, pulses = func(noise_path)
+    assert (all(x['F0'] is None for x in pitch.values()))
+
+    sr, sig = wavfile.read(noise_path)
+
+    pitch2, pulses2 = func(SignalSegment(sig, sr))
+
+    # assert pitch == pitch2
+
+    pitch, pulses = func(y_path)
+    assert (mean(x['F0'] for x in pitch.values()) - 100) < 1
+
+    sr, sig = wavfile.read(y_path)
+
+    pitch2, pulses2 = func(SignalSegment(sig, sr))
+
 
 
 def test_segment_pitch_track_praat(praatpath, acoustic_corpus_path):

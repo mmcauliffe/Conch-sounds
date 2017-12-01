@@ -39,6 +39,16 @@ def soundfiles_dir(test_dir):
 
 
 @pytest.fixture(scope='session')
+def tts_dir(test_dir):
+    return os.path.join(test_dir, 'tts_voices')
+
+
+@pytest.fixture(scope='session')
+def axb_mapping_path(test_dir):
+    return os.path.join(test_dir, 'axb_mapping.txt')
+
+
+@pytest.fixture(scope='session')
 def noise_path(soundfiles_dir):
     return os.path.join(soundfiles_dir, 'pink_noise_16k.wav')
 
@@ -114,13 +124,13 @@ def pitch_func():
 @pytest.fixture(scope='session')
 def reps_for_distance():
     source = {1: [2, 3, 4],
-                   2: [5, 6, 7],
-                   3: [2, 7, 6],
-                   4: [1, 5, 6]}
+              2: [5, 6, 7],
+              3: [2, 7, 6],
+              4: [1, 5, 6]}
     target = {1: [5, 6, 7],
-                   2: [2, 3, 4],
-                   3: [6, 8, 3],
-                   4: [2, 7, 9],
-                   5: [1, 5, 8],
-                   6: [7, 4, 9]}
+              2: [2, 3, 4],
+              3: [6, 8, 3],
+              4: [2, 7, 9],
+              5: [1, 5, 8],
+              6: [7, 4, 9]}
     return source, target

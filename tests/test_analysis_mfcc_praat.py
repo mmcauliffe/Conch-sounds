@@ -14,6 +14,6 @@ def test_mfcc_praat(praatpath, base_filenames):
         sig, sr = librosa.load(wavpath)
 
         mfccs2 = func(SignalSegment(sig, sr))
-
+        break
         # Things are not exact...
         # assert mfccs == mfccs2

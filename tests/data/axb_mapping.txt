@@ -1,0 +1,2 @@
+tests/data/tts_voices/david/david_conch.wav,tests/data/tts_voices/haruka/haruka_conch.wav,tests/data/tts_voices/enwm/enwm_conch.wav
+tests/data/tts_voices/david/david_conch.wav,tests/data/tts_voices/haruka/haruka_conch.wav,tests/data/tts_voices/zira/zira_conch.wav

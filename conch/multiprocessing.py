@@ -67,7 +67,7 @@ class AnalysisWorker(Process):
                 if self.ignore_errors:
                     continue
                 self.stopped.stop()
-                self.return_dict['error'] = ConchPythonError(traceback.format_exception(*sys.exc_info()))
+                self.return_dict['error'] = arguments, ConchPythonError(traceback.format_exception(*sys.exc_info()))
 
         return
 
@@ -99,7 +99,7 @@ class DistanceWorker(Process):
                 self.return_dict[pm] = distance
             except Exception as e:
                 self.stopped.stop()
-                self.return_dict['error'] = ConchPythonError(traceback.format_exception(*sys.exc_info()))
+                self.return_dict['error'] = (pm,ConchPythonError(traceback.format_exception(*sys.exc_info())))
 
         return
 
@@ -137,10 +137,10 @@ class AXBWorker(Process):
                     ratio = dist2 / dist1
                 except ZeroDivisionError:
                     ratio = -1
-                self.return_dict[pm] = ratio
+                self.return_dict[tuple(pm)] = ratio
             except Exception as e:
                 self.stopped.stop()
-                self.return_dict['error'] = ConchPythonError(traceback.format_exception(*sys.exc_info()))
+                self.return_dict['error'] = (pm, ConchPythonError(traceback.format_exception(*sys.exc_info())))
         return
 
 
@@ -188,7 +188,9 @@ def generate_cache(segment_mapping, anaysis_function, num_procs, call_back, stop
     for p in procs:
         p.join()
     if 'error' in return_dict:
-        raise (return_dict['error'])
+        element, exc = return_dict['error']
+        print(element)
+        raise exc
     to_return = {}
     to_return.update(return_dict)
     return to_return
@@ -277,7 +279,9 @@ def calculate_distances(comparisons, cache, distance_function, num_jobs, call_ba
     for p in procs:
         p.join()
     if 'error' in return_dict:
-        raise (return_dict['error'])
+        element, exc = return_dict['error']
+        print(element)
+        raise exc
     to_return = {}
     to_return.update(return_dict)
     return to_return
@@ -366,5 +370,7 @@ def calculate_axb_ratio(comparisons, cache, distance_function, num_jobs, call_ba
     for p in procs:
         p.join()
     if 'error' in return_dict:
-        raise (return_dict['error'])
+        element, exc = return_dict['error']
+        print(element)
+        raise exc
     return return_dict
