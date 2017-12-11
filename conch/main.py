@@ -59,7 +59,6 @@ def axb_mapping(path_mapping, analysis_function, distance_function, stop_check=N
     segments = set()
     for x in path_mapping:
         segments.update(x)
-    print(segments)
     cache = generate_cache(segments, analysis_function, num_cores, call_back, stop_check)
     asim = calculate_axb_ratio(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
     return asim
