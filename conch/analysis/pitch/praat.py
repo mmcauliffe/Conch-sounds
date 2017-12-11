@@ -6,10 +6,26 @@ from pyraat.parse_outputs import parse_track_script_output
 
 
 def track_pulse_parse_output(text):
-    track_text, pulse_text = text.split("\n\n")
-    track = parse_track_script_output(track_text)
+    track_text = []
+    pulse_text = []
+    blank_count = 0
+    add_track = True
+    for line in text.splitlines():
+        line = line.strip()
+        if line:
+            blank_count = 0
+        else:
+            blank_count += 1
+        if blank_count > 1:
+            add_track = False
+            continue
+        if add_track:
+            track_text.append(line)
+        else:
+            pulse_text.append(line)
+    track = parse_track_script_output('\n'.join(track_text))
     pulses = []
-    for line in pulse_text.splitlines():
+    for line in pulse_text:
         line = line.strip()
         if not line:
             continue

@@ -158,7 +158,7 @@ def acoustic_similarity_directory(directory, analysis_function, distance_functio
 
 
 def analyze_long_file(path, segments, analysis_function,
-                      num_jobs=None, padding=None,
+                      num_jobs=None, padding=0,
                       call_back=None, stop_check=None):
     segment_mapping = SegmentMapping()
     for s in segments:

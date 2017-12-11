@@ -9,7 +9,6 @@ class FileSegment(object):
         self.properties = kwargs
         if 'padding' in self.properties:
             self.properties['padding'] = float(Decimal(str(self.properties['padding'])).quantize(Decimal('0.001')))
-        print(self.begin, self.end, self.properties['padding'])
 
     def __repr__(self):
         return '<FileSegment object with properties: {}>'.format(str(self))
