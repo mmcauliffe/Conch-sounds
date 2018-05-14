@@ -1,4 +1,4 @@
-
+from itertools import product
 
 class FileSegment(object):
     def __init__(self, file_path, begin, end, channel=0, **kwargs):
@@ -120,10 +120,11 @@ class SegmentMapping(object):
     def levels(self, property_key):
         return set(x[property_key] for x in self.segments)
 
-    def grouped_mapping(self, property_key):
-        data = {x: [] for x in self.levels(property_key)}
+    def grouped_mapping(self, *properties):
+        data = {x: [] for x in product(*[self.levels(y) for y in properties])}
         for s in self.segments:
-            data[s[property_key]].append(s)
+            key = tuple(s[x] for x in properties)
+            data[key].append(s)
         return data
 
     def __iter__(self):
