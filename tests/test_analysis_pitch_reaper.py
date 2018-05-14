@@ -1,6 +1,6 @@
 from conch.analysis.pitch.reaper import ReaperPitchTrackFunction
 from statistics import mean
-from scipy.io import wavfile
+import librosa
 
 from conch.analysis.segments import FileSegment, SignalSegment
 
@@ -10,7 +10,7 @@ def test_pitch_reaper(noise_path, y_path, reaperpath):
     pitch = func(noise_path)
     assert (mean(x['F0'] for x in pitch.values()) == -1)
 
-    sr, sig = wavfile.read(noise_path)
+    sig, sr = librosa.load(noise_path)
 
     pitch2 = func(SignalSegment(sig, sr))
 
@@ -19,7 +19,7 @@ def test_pitch_reaper(noise_path, y_path, reaperpath):
     pitch = func(y_path)
     assert (mean(x['F0'] for x in pitch.values()) - 98.514) < 0.001
 
-    sr, sig = wavfile.read(y_path)
+    sig, sr = librosa.load(y_path)
 
     pitch2 = func(SignalSegment(sig, sr))
     # assert pitch == pitch2
@@ -31,7 +31,7 @@ def test_pitch_reaper_pulses(noise_path, y_path, reaperpath):
     pitch, pulses = func(noise_path)
     assert (mean(x['F0'] for x in pitch.values()) == -1)
 
-    sr, sig = wavfile.read(noise_path)
+    sig, sr = librosa.load(noise_path)
 
     pitch2, pulses2 = func(SignalSegment(sig, sr))
 
@@ -40,7 +40,7 @@ def test_pitch_reaper_pulses(noise_path, y_path, reaperpath):
     pitch, pulses = func(y_path)
     assert (mean(x['F0'] for x in pitch.values()) - 98.514) < 0.001
 
-    sr, sig = wavfile.read(y_path)
+    sig, sr = librosa.load(y_path)
 
     pitch2, pulses2 = func(SignalSegment(sig, sr))
     # assert pitch == pitch2

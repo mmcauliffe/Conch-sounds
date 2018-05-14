@@ -27,7 +27,7 @@ def test_pitch_pulses_praat(praatpath, noise_path, y_path):
     pitch, pulses = func(noise_path)
     assert (all(x['F0'] is None for x in pitch.values()))
 
-    sr, sig = wavfile.read(noise_path)
+    sig, sr = librosa.load(noise_path)
 
     pitch2, pulses2 = func(SignalSegment(sig, sr))
 
@@ -36,7 +36,7 @@ def test_pitch_pulses_praat(praatpath, noise_path, y_path):
     pitch, pulses = func(y_path)
     assert (mean(x['F0'] for x in pitch.values()) - 100) < 1
 
-    sr, sig = wavfile.read(y_path)
+    sig, sr = librosa.load(y_path)
 
     pitch2, pulses2 = func(SignalSegment(sig, sr))
 
