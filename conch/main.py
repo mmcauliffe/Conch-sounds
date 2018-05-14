@@ -59,7 +59,6 @@ def axb_mapping(path_mapping, analysis_function, distance_function, stop_check=N
     segments = set()
     for x in path_mapping:
         segments.update(x)
-    print(segments)
     cache = generate_cache(segments, analysis_function, num_cores, call_back, stop_check)
     asim = calculate_axb_ratio(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
     return asim
@@ -158,7 +157,7 @@ def acoustic_similarity_directory(directory, analysis_function, distance_functio
 
 
 def analyze_long_file(path, segments, analysis_function,
-                      num_jobs=None, padding=None,
+                      num_jobs=None, padding=0,
                       call_back=None, stop_check=None):
     segment_mapping = SegmentMapping()
     for s in segments:

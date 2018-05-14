@@ -1,12 +1,15 @@
+from decimal import Decimal
 from itertools import product
 
 class FileSegment(object):
     def __init__(self, file_path, begin, end, channel=0, **kwargs):
         self.file_path = file_path
-        self.begin = begin
-        self.end = end
+        self.begin = float(Decimal(str(begin)).quantize(Decimal('0.001')))
+        self.end = float(Decimal(str(end)).quantize(Decimal('0.001')))
         self.channel = channel
         self.properties = kwargs
+        if 'padding' in self.properties:
+            self.properties['padding'] = float(Decimal(str(self.properties['padding'])).quantize(Decimal('0.001')))
 
     def __repr__(self):
         return '<FileSegment object with properties: {}>'.format(str(self))
