@@ -212,12 +212,12 @@ class ASTemporaryWavFile(object):
     def __init__(self, signal, sr):
         self.temp_dir = TemporaryDirectory(prefix='acousticsim')
         self.signal = signal
-        self.signal *= 32768
+        #self.signal *= 32768
         self.sr = sr
 
     def __enter__(self):
         t_wav = NamedTemporaryFile(dir=self.temp_dir.name, delete=False, suffix='.wav')
-        librosa.output.write_wav(t_wav, self.signal.astype('int16'), self.sr)
+        librosa.output.write_wav(t_wav, self.signal, self.sr)
         t_wav.close()
         self.wav_path = t_wav.name
         return self.wav_path
