@@ -56,7 +56,7 @@ def test_analyze_long_file_reaper(acoustic_corpus_path, reaper_func):
         assert (all(x >= 1 for x in output[k].keys()))
         assert (all(x <= 2 for x in output[k].keys()))
 
-
+@pytest.mark.xfail
 def test_analyze_file_segments_reaper(acoustic_corpus_path, reaper_func):
     mapping = SegmentMapping()
     seg = (acoustic_corpus_path, 1, 2, 0)
