@@ -28,9 +28,13 @@ class Counter(object):
 
 
 class ReturnDictionary(object):
-    def __init(self):
+    def __init__(self):
         self.val = {}
         self.lock = Lock()
+
+    def __contains__(self, item):
+        with self.lock:
+            return item in self.val
 
     def value(self):
         with self.lock:
@@ -201,6 +205,7 @@ def generate_cache(segment_mapping, anaysis_function, num_procs, call_back, stop
             value = counter.value()
             call_back(value)
         seg_ind += 1
+
     job_queue.join()
 
     for p in procs:
@@ -209,8 +214,9 @@ def generate_cache(segment_mapping, anaysis_function, num_procs, call_back, stop
         element, exc = return_dict['error']
         print(element)
         raise exc
+
     to_return = {}
-    to_return.update(return_dict)
+    to_return.update(return_dict.value())
     return to_return
 
 
@@ -300,7 +306,7 @@ def calculate_distances(comparisons, cache, distance_function, num_jobs, call_ba
         print(element)
         raise exc
     to_return = {}
-    to_return.update(return_dict)
+    to_return.update(return_dict.value())
     return to_return
 
 
@@ -389,4 +395,4 @@ def calculate_axb_ratio(comparisons, cache, distance_function, num_jobs, call_ba
         element, exc = return_dict['error']
         print(element)
         raise exc
-    return return_dict
+    return return_dict.value()
