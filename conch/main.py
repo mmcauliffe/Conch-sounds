@@ -2,12 +2,13 @@ import os
 from multiprocessing import cpu_count
 
 from conch.exceptions import ConchError, NoWavError
-from conch.multiprocessing import generate_cache, calculate_distances, calculate_axb_ratio
+from conch.multiprocessing import generate_cache as generate_cache_mp, calculate_distances as calculate_distances_mp, calculate_axb_ratio as calculate_axb_ratio_mp
+from conch.threading import generate_cache as generate_cache_th, calculate_distances as calculate_distances_th, calculate_axb_ratio as calculate_axb_ratio_th
 
 from .analysis.segments import SegmentMapping
 
 
-def acoustic_similarity_mapping(path_mapping, analysis_function, distance_function, stop_check=None, call_back=None):
+def acoustic_similarity_mapping(path_mapping, analysis_function, distance_function, stop_check=None, call_back=None, multiprocessing=True):
     """Takes in an explicit mapping of full paths to .wav files to have
     acoustic similarity computed.
 
@@ -31,11 +32,15 @@ def acoustic_similarity_mapping(path_mapping, analysis_function, distance_functi
     segments = set()
     for x in path_mapping:
         segments.update(x)
-    cache = generate_cache(segments, analysis_function, num_cores, call_back, stop_check)
-    asim = calculate_distances(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
+    if multiprocessing:
+        cache = generate_cache_mp(segments, analysis_function, num_cores, call_back, stop_check)
+        asim = calculate_distances_mp(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
+    else:
+        cache = generate_cache_th(segments, analysis_function, num_cores, call_back, stop_check)
+        asim = calculate_distances_th(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
     return asim
 
-def axb_mapping(path_mapping, analysis_function, distance_function, stop_check=None, call_back=None):
+def axb_mapping(path_mapping, analysis_function, distance_function, stop_check=None, call_back=None, multiprocessing=True):
     """Takes in an explicit mapping of full paths to .wav files to have
     acoustic similarity computed.
 
@@ -59,12 +64,16 @@ def axb_mapping(path_mapping, analysis_function, distance_function, stop_check=N
     segments = set()
     for x in path_mapping:
         segments.update(x)
-    cache = generate_cache(segments, analysis_function, num_cores, call_back, stop_check)
-    asim = calculate_axb_ratio(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
+    if multiprocessing:
+        cache = generate_cache_mp(segments, analysis_function, num_cores, call_back, stop_check)
+        asim = calculate_axb_ratio_mp(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
+    else:
+        cache = generate_cache_th(segments, analysis_function, num_cores, call_back, stop_check)
+        asim = calculate_axb_ratio_th(path_mapping, cache, distance_function, num_cores, call_back, stop_check)
     return asim
 
 
-def acoustic_similarity_directories(directories, analysis_function, distance_function, stop_check=None, call_back=None):
+def acoustic_similarity_directories(directories, analysis_function, distance_function, stop_check=None, call_back=None, multiprocessing=True):
     """
     Analyze many directories.
 
@@ -117,11 +126,11 @@ def acoustic_similarity_directories(directories, analysis_function, distance_fun
                 continue
             path_mapping.append((x, y))
 
-    result = acoustic_similarity_mapping(path_mapping, analysis_function, distance_function, stop_check, call_back)
+    result = acoustic_similarity_mapping(path_mapping, analysis_function, distance_function, stop_check, call_back, multiprocessing)
     return result
 
 
-def acoustic_similarity_directory(directory, analysis_function, distance_function, stop_check=None, call_back=None):
+def acoustic_similarity_directory(directory, analysis_function, distance_function, stop_check=None, call_back=None, multiprocessing=True):
     all_files = list()
     wavs = list()
     directories = list()
@@ -134,7 +143,7 @@ def acoustic_similarity_directory(directory, analysis_function, distance_functio
             directories.append(path)
     if not wavs:
         return acoustic_similarity_directories(directories, analysis_function, distance_function, stop_check,
-                                               call_back)
+                                               call_back, multiprocessing)
 
     if call_back is not None:
         call_back('Mapping files...')
@@ -152,13 +161,13 @@ def acoustic_similarity_directory(directory, analysis_function, distance_functio
             if x == y:
                 continue
             path_mapping.append((x, y))
-    result = acoustic_similarity_mapping(path_mapping, analysis_function, distance_function, stop_check, call_back)
+    result = acoustic_similarity_mapping(path_mapping, analysis_function, distance_function, stop_check, call_back, multiprocessing)
     return result
 
 
 def analyze_long_file(path, segments, analysis_function,
                       num_jobs=None, padding=0,
-                      call_back=None, stop_check=None):
+                      call_back=None, stop_check=None, multiprocessing=True):
     segment_mapping = SegmentMapping()
     for s in segments:
         b = s[0]
@@ -170,18 +179,26 @@ def analyze_long_file(path, segments, analysis_function,
         segment_mapping.add_file_segment(path, b, e, c, padding=padding)
     if num_jobs is None:
         num_jobs = int((3 * cpu_count()) / 4)
-    output_dict = generate_cache(segment_mapping, analysis_function, num_jobs,
+    if multiprocessing:
+        output_dict = generate_cache_mp(segment_mapping, analysis_function, num_jobs,
+                                 call_back, stop_check)
+    else:
+        output_dict = generate_cache_th(segment_mapping, analysis_function, num_jobs,
                                  call_back, stop_check)
     return output_dict
 
 
 def analyze_segments(segment_mapping, analysis_function,
                      num_jobs=None,
-                     call_back=None, stop_check=None):
+                     call_back=None, stop_check=None, multiprocessing=True):
     if num_jobs is None:
         num_cores = int((3 * cpu_count()) / 4)
     else:
         num_cores = num_jobs
-    output_dict = generate_cache(segment_mapping, analysis_function, num_cores,
+    if multiprocessing:
+        output_dict = generate_cache_mp(segment_mapping, analysis_function, num_cores,
+                                 call_back, stop_check)
+    else:
+        output_dict = generate_cache_th(segment_mapping, analysis_function, num_cores,
                                  call_back, stop_check)
     return output_dict
