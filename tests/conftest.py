@@ -37,6 +37,9 @@ def praat_script_test_dir(test_dir):
 def soundfiles_dir(test_dir):
     return os.path.join(test_dir, 'soundfiles')
 
+@pytest.fixture(scope='session')
+def autovot_dir(test_dir):
+    return os.path.join(test_dir, 'autovot')
 
 @pytest.fixture(scope='session')
 def tts_dir(test_dir):
@@ -87,6 +90,25 @@ def base_filenames(soundfiles_dir):
                  if x.endswith('.wav')]
     return filenames
 
+@pytest.fixture(scope='session')
+def autovot_filenames(autovot_dir):
+    filenames = [os.path.join(autovot_dir, x)
+                 for x in os.listdir(autovot_dir)
+                 if x.endswith('.wav')]
+    return filenames
+
+@pytest.fixture(scope='session')
+def autovot_markings(test_dir, autovot_dir):
+    vot_markings = {}
+    with open(os.path.join(test_dir, "vot_marks"), "r") as f:
+        for x in f:
+            k = os.path.join(autovot_dir, x.split(' ')[0])
+            l = x.split(' ')[1:]
+            v = []
+            while l:
+                v.append((float(l.pop(0)), float(l.pop(0))))
+            vot_markings[k] = v
+    return vot_markings
 
 @pytest.fixture(scope='session')
 def praatpath():
