@@ -10,7 +10,7 @@ class MeasureVOTPretrained(object):
         if autovot_binaries_path is None:
             self.autovot_binaries_path = '/home/michael/Honours-Thesis/autovot/autovot/bin/auto_vot_decode.py'
         if classifier_to_use is None:
-            self.classifier_to_use = '/home/michael/Honours-Thesis/autovot/experiments/models/bb_jasa.classifier.pos'
+            self.classifier_to_use = '/home/michael/Honours-Thesis/autovot/experiments/models/bb_jasa.classifier'
 
     def __call__(self, segment):
         file_path = segment["file_path"]
