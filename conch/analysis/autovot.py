@@ -38,10 +38,14 @@ class MeasureVOTPretrained(object):
 
             grid.write(grid_path)
             subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length)])
+
+            return_list = []
             with open(csv_path, "r") as f: 
                 f.readline()
-                _, time, vot, confidence = f.readline().split(',')
-            return (time, vot)
+                for l in f:
+                    _, time, vot, confidence = l.split(',')
+                    return_list.append((time, vot))
+            return return_list
 
 class AutoVOTAnalysisFunction(BaseAnalysisFunction):
     def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250, arguments=None):
