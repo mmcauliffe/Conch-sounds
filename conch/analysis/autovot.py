@@ -9,8 +9,12 @@ class MeasureVOTPretrained(object):
     def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250):
         if autovot_binaries_path is None:
             self.autovot_binaries_path = '/home/michael/Honours-Thesis/autovot/autovot/bin/auto_vot_decode.py'
+        else:
+            self.autovot_binaries_path = autovot_binaries_path
         if classifier_to_use is None:
             self.classifier_to_use = '/home/michael/Honours-Thesis/autovot/experiments/models/bb_jasa.classifier'
+        else:
+            self.classifier_to_use = classifier_to_use
         self.min_vot_length = min_vot_length
         self.max_vot_length = max_vot_length
 
