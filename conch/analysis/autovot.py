@@ -48,7 +48,7 @@ class MeasureVOTPretrained(object):
                 f.readline()
                 for l in f:
                     _, time, vot, confidence = l.split(',')
-                    return_list.append((time, vot))
+                    return_list.append((float(time), float(vot)))
             return return_list
 
 class AutoVOTAnalysisFunction(BaseAnalysisFunction):
