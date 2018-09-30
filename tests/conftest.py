@@ -111,6 +111,34 @@ def autovot_markings(test_dir, autovot_dir):
     return vot_markings
 
 @pytest.fixture(scope='session')
+def autovot_correct_times():
+    return [(0.761,0.006),
+            (0.744,0.005),
+            (0.801,0.005),
+            (0.63,0.009),
+            (0.78,0.005),
+            (0.982,0.005),
+            (0.869,0.005),
+            (0.753,0.005),
+            (0.961,0.005),
+            (0.62,0.005),
+            (0.73,0.005),
+            (0.671,0.005),
+            (0.533,0.005),
+            (0.613,0.005),
+            (0.54,0.005),
+            (0.61,0.005),
+            (0.65,0.006),
+            (0.641,0.005),
+            (0.71,0.005),
+            (1.069,0.024),
+            (1.02,0.005),
+            (0.86,0.005),
+            (0.91,0.005),
+            (0.681,0.006),
+            (0.711,0.006),
+            (0.842,0.005)]
+@pytest.fixture(scope='session')
 def praatpath():
     if os.environ.get('TRAVIS'):
         return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
@@ -135,7 +163,6 @@ def formants_func():
     func = FormantTrackFunction(max_frequency=5000, time_step=0.01, num_formants=5,
                                 window_length=0.025)
     return func
-
 
 @pytest.fixture(scope='session')
 def pitch_func():
