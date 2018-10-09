@@ -22,10 +22,10 @@ class MeasureVOTPretrained(object):
         file_path = segment["file_path"]
         begin = segment["begin"]
         end = segment["end"]
-        vot_marks = segment["vot_marks"]
+        vot_marks = sorted(segment["vot_marks"], key=lambda x: x[0])
         grid = textgrid.TextGrid(maxTime=end)
         vot_tier = textgrid.IntervalTier(name='vot', maxTime=end)
-        for (vot_begin, vot_end) in vot_marks:
+        for vot_begin, vot_end, *extra_data in vot_marks:
             vot_tier.add(vot_begin, vot_end, 'vot')
         grid.append(vot_tier)
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -45,10 +45,11 @@ class MeasureVOTPretrained(object):
 
             return_list = []
             with open(csv_path, "r") as f: 
-                f.readline()
-                for l in f:
+                print(f.readline())
+                for l, (b, e, *extra_data) in f:
+                    print(l)
                     _, time, vot, confidence = l.split(',')
-                    return_list.append((float(time), float(vot)))
+                    return_list.append((float(time), float(vot), *extra_data))
             return return_list
 
 class AutoVOTAnalysisFunction(BaseAnalysisFunction):
