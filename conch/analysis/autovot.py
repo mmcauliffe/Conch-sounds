@@ -45,9 +45,7 @@ class MeasureVOTPretrained(object):
 
             return_list = []
             with open(csv_path, "r") as f: 
-                print(f.readline())
                 for l, (b, e, *extra_data) in zip(f, vot_marks):
-                    print(l)
                     _, time, vot, confidence = l.split(',')
                     return_list.append((float(time), float(vot), *extra_data))
             return return_list
