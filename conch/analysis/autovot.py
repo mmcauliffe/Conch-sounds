@@ -45,11 +45,11 @@ class MeasureVOTPretrained(object):
             subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length)])
 
             return_list = []
+            copyfile(csv_path, "/tmp/vot.csv")
             with open(csv_path, "r") as f: 
                 for l, (b, e, *extra_data) in zip(f, vot_marks):
                     _, time, vot, confidence = l.split(',')
                     return_list.append((float(time), float(vot), *extra_data))
-            copyfile(csv_path, "/tmp/vot.csv")
             return return_list
 
 class AutoVOTAnalysisFunction(BaseAnalysisFunction):
