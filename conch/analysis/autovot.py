@@ -7,7 +7,7 @@ import tempfile
 from shutil import copyfile
 
 class MeasureVOTPretrained(object):
-    def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250):
+    def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250, window_max=30, window_min=30):
         if autovot_binaries_path is None:
             self.autovot_binaries_path = '/home/michael/Honours-Thesis/autovot/autovot/bin/auto_vot_decode.py'
         else:
@@ -42,7 +42,9 @@ class MeasureVOTPretrained(object):
                 f.write("{}\n".format(grid_path))
 
             grid.write(grid_path)
-            subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length)])
+            #TODO: default window size to 30 also let it be changed. 
+            #Args: are window_min and window_max
+            subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", window_max, "--window_min", window_min])
 
             return_list = []
             copyfile(csv_path, "/tmp/vot.csv")
