@@ -4,6 +4,7 @@ import subprocess
 import textgrid 
 import os
 import tempfile
+from shutil import copyfile
 
 class MeasureVOTPretrained(object):
     def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250):
@@ -48,6 +49,7 @@ class MeasureVOTPretrained(object):
                 for l, (b, e, *extra_data) in zip(f, vot_marks):
                     _, time, vot, confidence = l.split(',')
                     return_list.append((float(time), float(vot), *extra_data))
+            copyfile(csv_path, "/tmp/vot.csv")
             return return_list
 
 class AutoVOTAnalysisFunction(BaseAnalysisFunction):
