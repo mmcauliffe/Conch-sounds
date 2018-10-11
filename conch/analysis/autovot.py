@@ -4,7 +4,6 @@ import subprocess
 import textgrid 
 import os
 import tempfile
-from shutil import copyfile
 
 class MeasureVOTPretrained(object):
     def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250, window_max=30, window_min=30):
@@ -49,7 +48,6 @@ class MeasureVOTPretrained(object):
             subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
 
             return_list = []
-            copyfile(csv_path, "/tmp/vot.csv")
             with open(csv_path, "r") as f: 
                 f.readline()
                 for l, (b, e, *extra_data) in zip(f, vot_marks):
