@@ -18,6 +18,8 @@ class MeasureVOTPretrained(object):
             self.classifier_to_use = classifier_to_use
         self.min_vot_length = min_vot_length
         self.max_vot_length = max_vot_length
+        self.window_max = window_max
+        self.window_min = window_min
 
     def __call__(self, segment):
         file_path = segment["file_path"]
@@ -44,7 +46,7 @@ class MeasureVOTPretrained(object):
             grid.write(grid_path)
             #TODO: default window size to 30 also let it be changed. 
             #Args: are window_min and window_max
-            subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", window_max, "--window_min", window_min])
+            subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
 
             return_list = []
             copyfile(csv_path, "/tmp/vot.csv")
