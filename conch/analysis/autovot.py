@@ -56,9 +56,9 @@ class MeasureVOTPretrained(object):
             return return_list
 
 class AutoVOTAnalysisFunction(BaseAnalysisFunction):
-    def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250, arguments=None):
+    def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250, window_max=30, window_min=30, arguments=None):
         super(AutoVOTAnalysisFunction, self).__init__()
-        self._function = MeasureVOTPretrained(autovot_binaries_path=autovot_binaries_path, classifier_to_use=classifier_to_use, min_vot_length=min_vot_length, max_vot_length=max_vot_length)
+        self._function = MeasureVOTPretrained(autovot_binaries_path=autovot_binaries_path, classifier_to_use=classifier_to_use, min_vot_length=min_vot_length, max_vot_length=max_vot_length, window_max=window_max, window_min=window_min)
         self.requires_file = True
         self.uses_segments = True
         self.requires_segment_as_arg = True
