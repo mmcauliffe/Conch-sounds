@@ -43,9 +43,13 @@ class MeasureVOTPretrained(object):
                 f.write("{}\n".format(grid_path))
 
             grid.write(grid_path)
+            grid.write('/tmp/textgrid_from_conch.csv')
+            with open('/tmp/alt_wordlist.txt', 'w') as f:
+                f.write("{}\n".format('/tmp/textgrid_from_conch.csv'))
             #TODO: default window size to 30 also let it be changed. 
             #Args: are window_min and window_max
             subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
+            subprocess.run([self.autovot_binaries_path, wav_filenames, '/tmp/alt_wordlist.txt', self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
 
             return_list = []
             with open(csv_path, "r") as f: 
