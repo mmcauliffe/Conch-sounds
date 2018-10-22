@@ -5,6 +5,23 @@ import textgrid
 import os
 import tempfile
 
+
+def is_autovot_friendly_file(sound_file):
+    rate = subprocess.run(["soxi", "-r", sound_file], encoding="UTF-8", capture_output=True).stdout
+    if int(rate) != 16000:
+        return False
+
+    channels = subprocess.run(["soxi", "-c", sound_file], encoding="UTF-8", capture_output=True).stdout
+    if int(channels) != 1:
+        return False
+    return True
+
+def resample_for_autovot(soundfile, tmpdir):
+    output_file = os.path.join(tmpdir, "sound_file.wav")
+    subprocess.call(["sox", soundfile, "-c", "1", "-r", "16000", output_file])
+    return output_file
+    
+
 class MeasureVOTPretrained(object):
     def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250, window_max=30, window_min=30, debug=False):
         if autovot_binaries_path is None:
@@ -22,7 +39,7 @@ class MeasureVOTPretrained(object):
         self.window_min = window_min
 
     def __call__(self, segment):
-        file_path = segment["file_path"]
+        file_path = os.path.expanduser(segment["file_path"])
         begin = segment["begin"]
         end = segment["end"]
         vot_marks = sorted(segment["vot_marks"], key=lambda x: x[0])
@@ -36,6 +53,9 @@ class MeasureVOTPretrained(object):
             csv_path = "{}/file.csv".format(tmpdirname)
             wav_filenames = "{}/wavs.txt".format(tmpdirname)
             textgrid_filenames = "{}/textgrids.txt".format(tmpdirname)
+
+            if not is_autovot_friendly_file(file_path):
+                file_path = resample_for_autovot(file_path, tmpdirname)
 
             with open(wav_filenames, 'w') as f:
                 f.write("{}\n".format(file_path))
