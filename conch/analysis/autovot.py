@@ -7,11 +7,11 @@ import tempfile
 
 
 def is_autovot_friendly_file(sound_file):
-    rate = subprocess.run(["soxi", "-r", sound_file], encoding="UTF-8", capture_output=True).stdout
+    rate = subprocess.run(["soxi", "-r", sound_file], encoding="UTF-8", stdout=subprocess.PIPE).stdout
     if int(rate) != 16000:
         return False
 
-    channels = subprocess.run(["soxi", "-c", sound_file], encoding="UTF-8", capture_output=True).stdout
+    channels = subprocess.run(["soxi", "-c", sound_file], encoding="UTF-8", stdout=subprocess.PIPE).stdout
     if int(channels) != 1:
         return False
     return True
