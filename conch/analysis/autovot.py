@@ -77,6 +77,8 @@ class MeasureVOTPretrained(object):
                 f.readline()
                 for l, (b, e, *extra_data) in zip(f, vot_marks):
                     _, time, vot, confidence = l.split(',')
+                    if "neg 0\n" ==  confidence:
+                        confidence = 0
                     return_list.append((float(time), float(vot), float(confidence), *extra_data))
             return return_list
 
