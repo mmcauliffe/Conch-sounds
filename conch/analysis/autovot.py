@@ -23,13 +23,9 @@ def resample_for_autovot(soundfile, tmpdir):
     
 
 class MeasureVOTPretrained(object):
-    def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250, window_max=30, window_min=30, debug=False):
-        if autovot_binaries_path is None:
-            self.autovot_binaries_path = '/home/michael/Honours-Thesis/autovot/autovot/bin/auto_vot_decode.py'
-        else:
-            self.autovot_binaries_path = autovot_binaries_path
+    def __init__(self, classifier_to_use=None, min_vot_length=15, max_vot_length=250, window_max=30, window_min=30, debug=False):
         if classifier_to_use is None:
-            self.classifier_to_use = '/home/michael/Honours-Thesis/autovot/experiments/models/bb_jasa.classifier'
+            raise ValueError("There must be a classifier to run AutoVOT")
         else:
             self.classifier_to_use = classifier_to_use
         self.min_vot_length = min_vot_length
@@ -69,8 +65,8 @@ class MeasureVOTPretrained(object):
                 grid.write('/tmp/textgrid_from_conch.csv')
                 with open('/tmp/alt_wordlist.txt', 'w') as f:
                     f.write("{}\n".format('/tmp/textgrid_from_conch.csv'))
-                subprocess.run([self.autovot_binaries_path, wav_filenames, '/tmp/alt_wordlist.txt', self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
-            subprocess.run([self.autovot_binaries_path, wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
+                subprocess.run(["auto_vot_decode.py", wav_filenames, '/tmp/alt_wordlist.txt', self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
+            subprocess.run(["auto_vot_decode.py", wav_filenames, textgrid_filenames, self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', '--csv_file', csv_path, "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
 
             return_list = []
             with open(csv_path, "r") as f: 
@@ -83,9 +79,9 @@ class MeasureVOTPretrained(object):
             return return_list
 
 class AutoVOTAnalysisFunction(BaseAnalysisFunction):
-    def __init__(self, autovot_binaries_path=None, classifier_to_use=None, min_vot_length=15, max_vot_length=250, window_max=30, window_min=30, debug=False, arguments=None):
+    def __init__(self, classifier_to_use=None, min_vot_length=15, max_vot_length=250, window_max=30, window_min=30, debug=False, arguments=None):
         super(AutoVOTAnalysisFunction, self).__init__()
-        self._function = MeasureVOTPretrained(autovot_binaries_path=autovot_binaries_path, classifier_to_use=classifier_to_use, min_vot_length=min_vot_length, max_vot_length=max_vot_length, window_max=window_max, window_min=window_min, debug=debug)
+        self._function = MeasureVOTPretrained(classifier_to_use=classifier_to_use, min_vot_length=min_vot_length, max_vot_length=max_vot_length, window_max=window_max, window_min=window_min, debug=debug)
         self.requires_file = True
         self.uses_segments = True
         self.requires_segment_as_arg = True
