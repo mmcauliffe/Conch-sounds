@@ -25,7 +25,7 @@ install:
 
 # Run test
 script:
-  - travis_wait 120 "coverage run --source=conch setup.py test"
+  - travis_wait 120 coverage run --source=conch setup.py test
 
 # Calculate coverage
 after_success:
