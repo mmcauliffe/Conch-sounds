@@ -44,6 +44,8 @@ class FileSegment(object):
             return False
         if self.channel != other.channel:
             return False
+        if self.properties != other.properties:
+            return False
         return True
 
     def __lt__(self, other):

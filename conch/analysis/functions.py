@@ -15,6 +15,7 @@ class BaseAnalysisFunction(object):
     def __init__(self):
         self._function = print
         self.requires_file = False
+        self.requires_segment_as_arg = False
         self.uses_segments = False
         self.arguments = []
 
@@ -39,6 +40,8 @@ class BaseAnalysisFunction(object):
         elif isinstance(segment, str) and not self.requires_file:
             signal, sr = librosa.load(safe_path(segment))
             return self._function(signal, sr, *self.arguments)
+        elif isinstance(segment, FileSegment) and self.requires_segment_as_arg:
+            return self._function(segment, *self.arguments)
         elif isinstance(segment, FileSegment) and self.requires_file and not self.uses_segments:
             beg, end = segment.begin, segment.end
             padding = segment['padding']
