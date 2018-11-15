@@ -8,6 +8,11 @@ branches:
 notifications:
   email: false
 
+addons:
+  apt:
+    packages:
+      - sox
+
 dist: trusty
 sudo: true
 
