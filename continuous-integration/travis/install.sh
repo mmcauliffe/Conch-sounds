@@ -45,7 +45,7 @@ else
   echo "Reaper already installed"
 fi
 
-if [ ! -f "$HOME/tools/autovot" ]; then
+if [ ! -d "$HOME/tools/autovot" ]; then
   cd $HOME/downloads
   git clone https://github.com/mlml/autovot.git
   cd autovot/autovot/code\
