@@ -20,6 +20,7 @@ before_install:
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
   - bash continuous-integration/travis/install.sh
+  - ls -al $HOME/tools/autovot/autovot/bin
 
 # Install packages
 install:
