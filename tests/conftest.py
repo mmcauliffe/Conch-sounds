@@ -65,7 +65,6 @@ def y_path(soundfiles_dir):
 def acoustic_corpus_path(soundfiles_dir):
     return os.path.join(soundfiles_dir, 'acoustic_corpus.wav')
 
-
 @pytest.fixture(scope='session')
 def call_back():
     def function(*args):
@@ -91,28 +90,21 @@ def base_filenames(soundfiles_dir):
     return filenames
 
 @pytest.fixture(scope='session')
-def autovot_filenames(autovot_dir):
-    filenames = [os.path.join(autovot_dir, x)
-                 for x in os.listdir(autovot_dir)
-                 if x.endswith('.wav')]
-    return filenames
-
-@pytest.fixture(scope='session')
-def autovot_markings(test_dir, autovot_dir):
-    vot_markings = {}
+def autovot_markings(test_dir):
+    vot_markings = []
     with open(os.path.join(test_dir, "vot_marks"), "r") as f:
         for x in f:
-            k = os.path.join(autovot_dir, x.split(' ')[0])
-            l = x.split(' ')[1:]
-            v = []
-            while l:
-                v.append((float(l.pop(0)), float(l.pop(0))))
-            vot_markings[k] = v
+            vots = x.split(' ')
+            vot_markings.append((float(vots[0]), float(vots[1])))
     return vot_markings
 
 @pytest.fixture(scope='session')
+def classifier_path(test_dir):
+    return os.path.join(test_dir, "vot_model", "sotc_voiceless.classifier")
+
+@pytest.fixture(scope='session')
 def autovot_correct_times():
-    return [(0.82, 0.005, 42.0803), (0.92, 0.005, 50.5166), (0.8, 0.005, 125.03), (0.76, 0.007, 93.6872), (0.756, 0.01, 101.213), (0.78, 0.009, 108.41), (0.774, 0.005, -62.3751), (0.807, 0.016, 85.4072), (0.64, 0.008, 70.7911), (0.753, 0.005, 63.7703), (0.692, 0.005, 103.689), (0.919, 0.021, 55.0379), (0.554, 0.005, -58.1071), (0.699, 0.024, 73.1509), (0.65, 0.011, 84.4646), (0.713, 0.022, 78.342), (0.66, 0.005, 50.3185), (0.67, 0.005, 67.515), (0.73, 0.005, 76.6631), (0.973, 0.005, -62.2706), (0.88, 0.009, 89.3114), (1.044, 0.005, 108.472), (0.704, 0.005, 93.9944), (0.93, 0.005, 65.8704), (0.73, 0.005, 111.866), (0.861, 0.005, 94.9302)]
+     return [(1.593, 0.056, 180.344), (1.828, 0.008, 126.073), (1.909, 0.071, 90.8671), (2.041, 0.005, 45.6481), (2.687, 0.016, 212.67), (2.859, 0.005, 22.646), (2.951, 0.005, 78.2495), (3.351, 0.052, 84.7406), (5.574, 0.02, 96.0191), (6.212, 0.01, 72.1773), (6.736, 0.02, 114.721), (7.02, 0.029, 224.901), (9.255, 0.032, 123.367), (9.498, 0.017, 92.7151), (11.424, 0.056, 85.1062), (13.144, 0.012, 191.111), (13.55, 0.012, 59.8446), (25.125, 0.014, 165.632)]
 
 @pytest.fixture(scope='session')
 def praatpath():
