@@ -23,7 +23,7 @@ before_install:
 
 # Install packages
 install:
-  - export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  - export PATH="$HOME/miniconda/miniconda/bin:$HOME/tools/autovot/autovot/bin:$PATH"
   - source activate test-environment
   - which python
   - conda list
