@@ -48,7 +48,7 @@ fi
 if [ ! -d "$HOME/tools/autovot" ]; then
   cd $HOME/tools
   git clone https://github.com/mlml/autovot.git
-  cd autovot/autovot/code\
+  cd autovot/autovot/code
   make
 else
   echo "AutoVOT already installed"
