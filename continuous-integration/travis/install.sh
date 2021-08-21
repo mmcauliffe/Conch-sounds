@@ -11,7 +11,7 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
-  conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy pytest setuptools
+  conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pytest setuptools
   source activate test-environment
   pip install -q praatio~=4.1 textgrid coveralls coverage librosa pyraat future
 else
@@ -21,11 +21,11 @@ fi
 if [ ! -f "$HOME/tools/praat" ]; then
   cd $HOME/downloads
   #FOR WHEN TRAVIS UPDATES TO A NEWER UBUNTU
-  latestVer=$(curl -s 'http://www.fon.hum.uva.nl/praat/download_linux.html' |
-   grep -Eo 'praat[0-9]+_linux64barren\.tar\.gz' | head -1)
+  #latestVer=$(curl -s 'https://www.fon.hum.uva.nl/praat/download_linux.html' |
+  # grep -Eo 'praat[0-9]+_linux64barren\.tar\.gz' | head -1)
 
   # Download.
-  curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
+  curl "https://www.fon.hum.uva.nl/praat/praat6151_linux64barren.tar.gz" > praat-latest.tar.gz
   tar -zxvf praat-latest.tar.gz
   mv praat_barren $HOME/tools/praat
 else
