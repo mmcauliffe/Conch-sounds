@@ -1,7 +1,6 @@
 from .functions import BaseAnalysisFunction
-import wave
 import subprocess
-import textgrid 
+from praatio import tgio
 import os
 import tempfile
 
@@ -39,11 +38,14 @@ class MeasureVOTPretrained(object):
         begin = segment["begin"]
         end = segment["end"]
         vot_marks = sorted(segment["vot_marks"], key=lambda x: x[0])
-        grid = textgrid.TextGrid(maxTime=end)
-        vot_tier = textgrid.IntervalTier(name='vot', maxTime=end)
+        grid = tgio.Textgrid()
+        grid.minTimestamp = 0
+        grid.maxTimestamp = end
+        vots = []
         for vot_begin, vot_end, *extra_data in vot_marks:
-            vot_tier.add(vot_begin, vot_end, 'vot')
-        grid.append(vot_tier)
+            vots.append((vot_begin, vot_end, 'vot'))
+        vot_tier = tgio.IntervalTier('vot', vots, minT=0, maxT=end)
+        grid.addTier(vot_tier)
         with tempfile.TemporaryDirectory() as tmpdirname:
             grid_path = "{}/file.TextGrid".format(tmpdirname)
             csv_path = "{}/file.csv".format(tmpdirname)
@@ -59,10 +61,10 @@ class MeasureVOTPretrained(object):
             with open(textgrid_filenames, 'w') as f:
                 f.write("{}\n".format(grid_path))
 
-            grid.write(grid_path)
+            grid.save(grid_path, useShortForm=False)
             
             if self.debug:
-                grid.write('/tmp/textgrid_from_conch.csv')
+                grid.save('/tmp/textgrid_from_conch.csv')
                 with open('/tmp/alt_wordlist.txt', 'w') as f:
                     f.write("{}\n".format('/tmp/textgrid_from_conch.csv'))
                 subprocess.run(["auto_vot_decode.py", wav_filenames, '/tmp/alt_wordlist.txt', self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])

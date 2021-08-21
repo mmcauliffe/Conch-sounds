@@ -12,10 +12,6 @@ from conch.analysis import MfccFunction, FormantTrackFunction, PitchTrackFunctio
 from conch.distance import DtwFunction
 from conch.analysis.segments import SegmentMapping
 
-slow = pytest.mark.skipif(
-    not pytest.config.getoption("--runslow"),
-    reason="need --runslow option to run"
-)
 
 
 def test_acoustic_similarity_directories(tts_dir, call_back, praatpath):
@@ -25,7 +21,6 @@ def test_acoustic_similarity_directories(tts_dir, call_back, praatpath):
                                            call_back=call_back)
 
 
-# @slow
 def test_acoustic_similarity_directory(soundfiles_dir, call_back):
     func = PitchTrackFunction()
     dist_func = DtwFunction(norm=True)

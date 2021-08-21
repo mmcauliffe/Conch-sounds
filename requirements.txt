@@ -1,7 +1,7 @@
 numpy
 scipy
 pyraat
-textgrid
+praatio ~= 4.1
 librosa
 pytest
 sphinx>=1.3b3

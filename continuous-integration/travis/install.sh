@@ -13,7 +13,7 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda info -a
   conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest setuptools
   source activate test-environment
-  pip install -q textgrid coveralls coverage librosa pyraat
+  pip install -q praatio~=4.1 textgrid coveralls coverage librosa pyraat future
 else
   echo "Miniconda already installed."
 fi

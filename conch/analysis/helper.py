@@ -2,7 +2,7 @@ import numpy as np
 from numpy.fft import fft, ifft
 from scipy.signal import lfilter
 from scipy.io import wavfile
-import librosa
+import soundfile
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 
@@ -217,7 +217,7 @@ class ASTemporaryWavFile(object):
 
     def __enter__(self):
         t_wav = NamedTemporaryFile(dir=self.temp_dir.name, delete=False, suffix='.wav')
-        librosa.output.write_wav(t_wav, self.signal, self.sr)
+        soundfile.write(t_wav, self.signal, self.sr)
         t_wav.close()
         self.wav_path = t_wav.name
         return self.wav_path
