@@ -13,12 +13,9 @@ addons:
     packages:
       - sox
 
-dist: trusty
-sudo: true
+dist: bionic
 
 before_install:
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
   - bash continuous-integration/travis/install.sh
   - ls -al $HOME/tools/autovot/autovot/bin
 
@@ -26,6 +23,7 @@ before_install:
 install:
   - export PATH="$HOME/miniconda/miniconda/bin:$HOME/tools/autovot/autovot/bin:$PATH"
   - source activate test-environment
+  - pip install -r requirements.txt
   - which python
   - conda list
 
