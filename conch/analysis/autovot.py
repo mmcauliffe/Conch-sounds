@@ -1,6 +1,6 @@
 from .functions import BaseAnalysisFunction
 import subprocess
-from praatio import tgio
+from praatio import textgrid
 import os
 import tempfile
 
@@ -38,13 +38,13 @@ class MeasureVOTPretrained(object):
         begin = segment["begin"]
         end = segment["end"]
         vot_marks = sorted(segment["vot_marks"], key=lambda x: x[0])
-        grid = tgio.Textgrid()
+        grid = textgrid.Textgrid()
         grid.minTimestamp = 0
         grid.maxTimestamp = end
         vots = []
         for vot_begin, vot_end, *extra_data in vot_marks:
             vots.append((vot_begin, vot_end, 'vot'))
-        vot_tier = tgio.IntervalTier('vot', vots, minT=0, maxT=end)
+        vot_tier = textgrid.IntervalTier('vot', vots, minT=0, maxT=end)
         grid.addTier(vot_tier)
         with tempfile.TemporaryDirectory() as tmpdirname:
             grid_path = "{}/file.TextGrid".format(tmpdirname)
@@ -61,7 +61,7 @@ class MeasureVOTPretrained(object):
             with open(textgrid_filenames, 'w') as f:
                 f.write("{}\n".format(grid_path))
 
-            grid.save(grid_path, useShortForm=False)
+            grid.save(grid_path, includeBlankSpaces=True, format='long_textgrid')
             
             if self.debug:
                 grid.save('/tmp/textgrid_from_conch.csv')
