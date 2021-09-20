@@ -28,7 +28,7 @@ import os
 import mock
 
 MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
-                'numpy', 'resampy', 'audioread',
+                'numpy', 'resampy', 'audioread', 'praatio.utilities', 'praatio',
                 'scipy', 'scipy.signal', 'scipy.io',
                 'librosa', 'librosa.core.spectrum']
 
