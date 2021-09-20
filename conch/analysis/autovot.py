@@ -64,7 +64,7 @@ class MeasureVOTPretrained(object):
             grid.save(grid_path, includeBlankSpaces=True, format='long_textgrid')
             
             if self.debug:
-                grid.save('/tmp/textgrid_from_conch.csv')
+                grid.save('/tmp/textgrid_from_conch.csv', includeBlankSpaces=True, format='long_textgrid')
                 with open('/tmp/alt_wordlist.txt', 'w') as f:
                     f.write("{}\n".format('/tmp/textgrid_from_conch.csv'))
                 subprocess.run(["auto_vot_decode.py", wav_filenames, '/tmp/alt_wordlist.txt', self.classifier_to_use, '--vot_tier', 'vot', '--vot_mark', 'vot', "--min_vot_length", str(self.min_vot_length), "--max_vot_length", str(self.max_vot_length), "--window_max", str(self.window_max), "--window_min", str(self.window_min)])
