@@ -1,6 +1,7 @@
 import librosa
 from numpy import log10, arange, hanning, log, correlate, max, mean, maximum, inf
-from scipy.signal import gaussian, argrelmax
+from scipy.signal.windows import gaussian
+from scipy.signal import argrelmax
 from ..functions import BaseAnalysisFunction
 
 

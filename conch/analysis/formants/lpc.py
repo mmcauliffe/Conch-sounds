@@ -4,7 +4,7 @@ import scipy as sp
 from scipy.signal import lfilter
 
 from scipy.fftpack import fft, ifft
-from scipy.signal import gaussian
+from scipy.signal.windows import gaussian
 
 from ..helper import nextpow2
 from ..functions import BaseAnalysisFunction
