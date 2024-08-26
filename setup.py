@@ -59,7 +59,7 @@ if __name__ == '__main__':
           install_requires=[
               'numpy',
               'scipy',
-              'praatio ~= 5.0',
+              'praatio',
               'librosa',
               'pyraat'
           ],
