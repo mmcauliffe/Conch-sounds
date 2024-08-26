@@ -1,7 +1,7 @@
 numpy
 scipy
 pyraat
-praatio ~= 5.0
+praatio
 librosa
 pytest
 sphinx>=1.3b3
