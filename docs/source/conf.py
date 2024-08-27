@@ -28,16 +28,6 @@ from datetime import date
 sys.path.insert(0, os.path.abspath("../../"))
 from conch.utils import get_conch_version  # noqa
 
-import mock
-
-MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
-                'numpy', 'resampy', 'audioread', 'praatio.utilities', 'praatio',
-                'scipy', 'scipy.signal', 'scipy.io',
-                'librosa', 'librosa.core.spectrum']
-
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = mock.Mock()
-
 
 # -- General configuration ------------------------------------------------
 

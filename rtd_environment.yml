@@ -13,6 +13,5 @@ dependencies:
   - sphinx-intl
   - pydata-sphinx-theme
   - myst-parser
-  - mock
   - pip:
       - pyraat
