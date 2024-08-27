@@ -13,8 +13,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux-64
+            prefix: /usr/share/miniconda3/envs/my-env
+
+          #- os: macos-latest
+          #  label: osx-64
+          #  prefix: /Users/runner/miniconda3/envs/my-env
+
+          #- os: windows-latest
+          #  label: win-64
+          #  prefix: C:\Miniconda3\envs\my-env
+
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@main
@@ -36,18 +52,10 @@ jobs:
           tar -xvzf praat.tar.gz
           echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
 
-      - name: Set up
-        run: |
-          conda activate conch
-          which python
-          pip install -e .
-
       - name: Run tests
         shell: bash -l {0}
         run: |
-          conda activate conch
-          which python
-          pytest -x
+          pytest -x ./tests
 
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v3"

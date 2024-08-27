@@ -239,7 +239,7 @@ def lpc_formants(signal, sr, num_formants, max_freq, time_step,
                 continue
             if f > max_freq - 50:
                 continue
-            formants.append((float(f), float(bw[j])))
+            formants.append((f.item(), bw[j].item()))
         missing = num_formants - len(formants)
         if missing:
             formants += [(None, None)] * missing
