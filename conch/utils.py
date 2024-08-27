@@ -40,3 +40,19 @@ def concatenate_files(files):
         #    raise(AcousticSimError('Files for concatenation must have the same sampling rates.'))
         out = np.append(out, proc)
     return out
+
+
+def get_conch_version() -> str:
+    """
+    Get the current conch version
+
+    Returns
+    -------
+    str
+        Conch version
+    """
+    try:
+        from ._version import version as __version__  # noqa
+    except ImportError:
+        __version__ = "1.0.0"
+    return __version__

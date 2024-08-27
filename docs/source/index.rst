@@ -10,6 +10,8 @@ Welcome to Conch's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   analysis
+   similarity
 
 
 Indices and tables

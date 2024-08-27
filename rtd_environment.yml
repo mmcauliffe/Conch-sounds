@@ -10,7 +10,6 @@ dependencies:
   - sphinx
   - numpydoc
   - sphinx-design
-  - sphinx-click
   - sphinx-intl
   - pydata-sphinx-theme
   - myst-parser
