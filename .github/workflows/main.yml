@@ -57,6 +57,7 @@ jobs:
         run: |
           ls
           which python
+          pip install -e .
           pytest -x ./tests
 
       - name: "Upload coverage to Codecov"
