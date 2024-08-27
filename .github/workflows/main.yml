@@ -50,13 +50,11 @@ jobs:
         run: |
           wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
           tar -xvzf praat.tar.gz
-          echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
+          alias praat="$(pwd)/praat_barren"
 
       - name: Run tests
         shell: bash -l {0}
         run: |
-          ls
-          which python
           pip install -e .
           pytest -x ./tests
 
