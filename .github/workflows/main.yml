@@ -25,7 +25,7 @@ jobs:
         uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: environment.yml
-          environment-name: mfa
+          environment-name: conch
           create-args: >-
             python=3.9
           cache-environment: true
@@ -36,9 +36,12 @@ jobs:
           tar -xvzf praat.tar.gz
           echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
 
+      - name: Set up
+        run: pip install -e .
+
       - name: Run tests
         shell: bash -l {0}
-        run: pytest -x ./tests
+        run: pytest -x
 
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v3"
