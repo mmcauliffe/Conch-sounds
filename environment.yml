@@ -9,6 +9,7 @@ dependencies:
   - praatio
   - pytest
   - reaper
+  - setuptools_scm
   - pip:
       - build
       - twine
