@@ -1,12 +1,16 @@
 from conch.analysis.intensity.praat import PraatIntensityTrackFunction, PraatSegmentIntensityTrackFunction
 import librosa
 import pytest
+import shutil
 
 from conch.analysis.segments import FileSegment, SignalSegment
 from conch.exceptions import FunctionMismatch
 
 
 def test_intensity_praat(praatpath, base_filenames):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     for f in base_filenames:
         wavpath = f + '.wav'
         func = PraatIntensityTrackFunction(praat_path=praatpath, time_step=0.01)
@@ -22,6 +26,9 @@ def test_intensity_praat(praatpath, base_filenames):
 
 
 def test_segment_pitch_track_praat(praatpath, base_filenames):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     for f in base_filenames:
         if f != 'acoustic_corpus':
             continue

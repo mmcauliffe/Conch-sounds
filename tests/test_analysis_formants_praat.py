@@ -2,13 +2,16 @@ from conch.analysis.formants.praat import PraatFormantTrackFunction, PraatForman
     PraatSegmentFormantPointFunction, PraatSegmentFormantTrackFunction
 import librosa
 import pytest
-
+import shutil
 from conch.exceptions import FunctionMismatch
 
 from conch.analysis.segments import FileSegment, SignalSegment, SegmentMapping
 
 
 def test_formant_track_praat(praatpath, base_filenames):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     for f in base_filenames:
         wavpath = f + '.wav'
         func = PraatFormantTrackFunction(praat_path=praatpath, time_step=0.01,
@@ -24,6 +27,9 @@ def test_formant_track_praat(praatpath, base_filenames):
 
 
 def test_formant_point_praat(praatpath, base_filenames):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     for f in base_filenames:
         wavpath = f + '.wav'
         func = PraatFormantPointFunction(praat_path=praatpath, time_step=0.01,
@@ -39,6 +45,9 @@ def test_formant_point_praat(praatpath, base_filenames):
 
 
 def test_segment_formant_track_praat(praatpath, acoustic_corpus_path):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     func = PraatSegmentFormantTrackFunction(praat_path=praatpath, time_step=0.01,
                                      window_length=0.025, num_formants=5, max_frequency=5500)
     segment = FileSegment(acoustic_corpus_path, 2.142, 2.245, 0, padding=0.1)
@@ -55,6 +64,9 @@ def test_segment_formant_track_praat(praatpath, acoustic_corpus_path):
 
 
 def test_segment_formant_point_praat(praatpath, acoustic_corpus_path):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     func = PraatSegmentFormantPointFunction(praat_path=praatpath, time_step=0.01,
                                      window_length=0.025, num_formants=5, max_frequency=5500, point_percent=0.33)
 

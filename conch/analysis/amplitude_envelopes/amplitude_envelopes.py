@@ -1,9 +1,7 @@
 import numpy as np
-import librosa
 
 from scipy.signal import filtfilt, butter, hilbert
-
-from librosa import resample
+from scipy.signal import resample
 
 from ..helper import preemphasize
 from ..functions import BaseAnalysisFunction
@@ -62,9 +60,11 @@ def generate_amplitude_envelopes(signal, sr, num_bands, min_frequency, max_frequ
     for i in range(num_bands):
         b, a = butter(2, (band_mins[i] / (sr / 2), band_maxes[i] / (sr / 2)), btype='bandpass')
         env = filtfilt(b, a, proc)
-        env = abs(hilbert(env))
+        env = np.abs(hilbert(env))
         if mode == 'downsample':
-            env = resample(env, sr, 120)
+            env = resample(
+                env, int(env.shape[0] * 120 / sr)
+            )
         envs.append(env)
     envs = np.array(envs).T
     if mode == 'downsample':

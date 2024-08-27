@@ -3,8 +3,3 @@ scipy
 pyraat
 praatio
 librosa
-pytest
-sphinx>=1.3b3
-numpydoc
-future
-textgrid

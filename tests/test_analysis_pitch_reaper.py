@@ -1,11 +1,16 @@
 from conch.analysis.pitch.reaper import ReaperPitchTrackFunction
 from statistics import mean
 import librosa
+import shutil
+import pytest
 
 from conch.analysis.segments import FileSegment, SignalSegment
 
 
 def test_pitch_reaper(noise_path, y_path, reaperpath):
+    reaper_path = shutil.which("reaper")
+    if reaper_path is None:
+        pytest.skip("No Reaper")
     func = ReaperPitchTrackFunction(reaper_path=reaperpath, time_step=0.01, min_pitch=75, max_pitch=600)
     pitch = func(noise_path)
     assert (mean(x['F0'] for x in pitch.values()) == -1)
@@ -26,6 +31,9 @@ def test_pitch_reaper(noise_path, y_path, reaperpath):
 
 
 def test_pitch_reaper_pulses(noise_path, y_path, reaperpath):
+    reaper_path = shutil.which("reaper")
+    if reaper_path is None:
+        pytest.skip("No Reaper")
     func = ReaperPitchTrackFunction(reaper_path=reaperpath, time_step=0.01, min_pitch=75, max_pitch=600,
                                     with_pulses=True)
     pitch, pulses = func(noise_path)
@@ -47,6 +55,9 @@ def test_pitch_reaper_pulses(noise_path, y_path, reaperpath):
 
 
 def test_segment_pitch_track(acoustic_corpus_path, reaperpath):
+    reaper_path = shutil.which("reaper")
+    if reaper_path is None:
+        pytest.skip("No Reaper")
     func = ReaperPitchTrackFunction(reaper_path=reaperpath, time_step=0.01, min_pitch=75, max_pitch=600)
     segment = FileSegment(acoustic_corpus_path, 2.142, 2.245, 0, padding=0.1)
     pitch = func(segment)

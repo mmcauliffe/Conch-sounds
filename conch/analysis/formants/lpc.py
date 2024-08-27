@@ -1,10 +1,10 @@
-import librosa
 import numpy as np
 import scipy as sp
 from scipy.signal import lfilter
 
 from scipy.fftpack import fft, ifft
 from scipy.signal.windows import gaussian
+from scipy.signal import resample
 
 from ..helper import nextpow2
 from ..functions import BaseAnalysisFunction
@@ -216,7 +216,9 @@ def lpc_formants(signal, sr, num_formants, max_freq, time_step,
     alpha = np.exp(-2 * np.pi * 50 * (1 / new_sr))
     proc = lfilter([1., -alpha], 1, signal)
     if sr > new_sr:
-        proc = librosa.resample(proc, sr, new_sr)
+        proc = resample(
+            proc, int(proc.shape[0] * new_sr / sr)
+        )
     nperseg = int(win_len * new_sr)
     nperstep = int(time_step * new_sr)
     if window_shape == 'gaussian':
@@ -237,7 +239,7 @@ def lpc_formants(signal, sr, num_formants, max_freq, time_step,
                 continue
             if f > max_freq - 50:
                 continue
-            formants.append((np.asscalar(f), np.asscalar(bw[j])))
+            formants.append((float(f), float(bw[j])))
         missing = num_formants - len(formants)
         if missing:
             formants += [(None, None)] * missing

@@ -1,0 +1,47 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Allow rebuilds via API.
+  repository_dispatch:
+    types: rebuild
+
+concurrency:
+  group: run_tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
+      - name: Install Conda environment with Micromamba
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          environment-name: mfa
+          create-args: >-
+            python=3.9
+          cache-environment: true
+
+      - name: Download and set up Praat
+        run: |
+          wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
+          tar -xvzf praat.tar.gz
+          echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: pytest -x ./tests
+
+      - name: "Upload coverage to Codecov"
+        uses: "codecov/codecov-action@v3"
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false

@@ -1,13 +1,16 @@
 from conch.analysis.pitch.praat import PraatPitchTrackFunction, PraatSegmentPitchTrackFunction
 import librosa
 from statistics import mean
-from scipy.io import wavfile
 import pytest
+import shutil
 from conch.analysis.segments import FileSegment, SignalSegment
 from conch.exceptions import FunctionMismatch
 
 
 def test_pitch_praat(praatpath, base_filenames):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     for f in base_filenames:
         wavpath = f + '.wav'
         func = PraatPitchTrackFunction(praat_path=praatpath, time_step=0.01,
@@ -22,6 +25,9 @@ def test_pitch_praat(praatpath, base_filenames):
         # assert pitch == pitch2
 
 def test_pitch_pulses_praat(praatpath, noise_path, y_path):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     func = PraatPitchTrackFunction(praat_path=praatpath, time_step=0.01, min_pitch=75, max_pitch=600,
                                     with_pulses=True)
     pitch, pulses = func(noise_path)
@@ -43,6 +49,9 @@ def test_pitch_pulses_praat(praatpath, noise_path, y_path):
 
 
 def test_segment_pitch_track_praat(praatpath, acoustic_corpus_path):
+    praat_path = shutil.which("praat")
+    if praat_path is None:
+        pytest.skip("No Praat")
     func = PraatSegmentPitchTrackFunction(praat_path=praatpath, time_step=0.01, min_pitch=75, max_pitch=600)
     segment = FileSegment(acoustic_corpus_path, 2.142, 2.245, 0, padding=0.1)
     pitch = func(segment)

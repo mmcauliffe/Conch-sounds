@@ -1,13 +1,15 @@
 from conch.analysis.autovot import AutoVOTAnalysisFunction
-import librosa
-from statistics import mean
 import wave
 import pytest
+import shutil
 from conch.analysis.segments import SegmentMapping
 from conch import analyze_segments
 
 
 def test_autovot(acoustic_corpus_path, autovot_markings, classifier_path, autovot_correct_times):
+    autovot_path = shutil.which("VotDecode")
+    if autovot_path is None:
+        pytest.skip("No AutoVOT")
     mapping = SegmentMapping()
     with wave.open(acoustic_corpus_path, 'r') as f: 
         length = f.getnframes() / float(f.getframerate())

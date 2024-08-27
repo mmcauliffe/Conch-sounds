@@ -1,0 +1,19 @@
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.8
+  - numpy
+  - librosa
+  - pysoundfile
+  - scipy
+  - praatio
+  - sphinx
+  - numpydoc
+  - sphinx-design
+  - sphinx-click
+  - sphinx-intl
+  - pydata-sphinx-theme
+  - myst-parser
+  - mock
+  - pip:
+      - pyraat

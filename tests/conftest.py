@@ -108,22 +108,20 @@ def autovot_correct_times():
 
 @pytest.fixture(scope='session')
 def praatpath():
-    if os.environ.get('TRAVIS'):
+    if os.environ.get('GITHUB_ACTIONS'):
         return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
     return 'praat'
 
 
 @pytest.fixture(scope='session')
 def reaperpath():
-    if os.environ.get('TRAVIS'):
-        return os.path.join(os.environ.get('HOME'), 'tools', 'reaper')
     return 'reaper'
 
 
 @pytest.fixture(scope='session')
 def reaper_func(reaperpath):
     from conch.analysis.pitch.reaper import ReaperPitchTrackFunction
-    return ReaperPitchTrackFunction(reaper_path=reaperpath)
+    return ReaperPitchTrackFunction()
 
 
 @pytest.fixture(scope='session')
