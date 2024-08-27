@@ -55,6 +55,8 @@ jobs:
       - name: Run tests
         shell: bash -l {0}
         run: |
+          ls
+          which python
           pytest -x ./tests
 
       - name: "Upload coverage to Codecov"
