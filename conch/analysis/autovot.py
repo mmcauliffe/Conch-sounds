@@ -13,11 +13,16 @@ def is_autovot_friendly_file(sound_file):
     channels = subprocess.run(["soxi", "-c", sound_file], encoding="UTF-8", stdout=subprocess.PIPE).stdout
     if int(channels) != 1:
         return False
+    
+    precision = subprocess.run(["soxi", "-p", sound_file], encoding="UTF-8", stdout=subprocess.PIPE).stdout
+    if int(precision) != 16:
+        return False
+    
     return True
 
 def resample_for_autovot(soundfile, tmpdir):
     output_file = os.path.join(tmpdir, "sound_file.wav")
-    subprocess.call(["sox", soundfile, "-c", "1", "-r", "16000", output_file])
+    subprocess.call(["sox", soundfile, "-c", "1", "-r", "16000", "-b", "16", output_file])
     return output_file
     
 
