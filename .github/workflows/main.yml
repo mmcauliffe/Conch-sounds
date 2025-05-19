@@ -48,7 +48,7 @@ jobs:
 
       - name: Download and set up Praat
         run: |
-          wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
+          wget https://github.com/praat/praat/releases/download/v6.4.21/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz
           tar -xvzf praat.tar.gz
 
       - name: Run tests
