@@ -213,6 +213,7 @@ def lpc_formants(signal, sr, num_formants, max_freq, time_step,
                  win_len, window_shape='gaussian'):
     output = {}
     new_sr = 2 * max_freq
+    proc = signal
     if sr != new_sr:
         proc = resample(
             proc, int(proc.shape[0] * new_sr / sr)
