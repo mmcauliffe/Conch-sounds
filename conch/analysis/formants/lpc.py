@@ -213,12 +213,12 @@ def lpc_formants(signal, sr, num_formants, max_freq, time_step,
                  win_len, window_shape='gaussian'):
     output = {}
     new_sr = 2 * max_freq
-    alpha = np.exp(-2 * np.pi * 50 * (1 / new_sr))
-    proc = lfilter([1., -alpha], 1, signal)
-    if sr > new_sr:
+    if sr != new_sr:
         proc = resample(
             proc, int(proc.shape[0] * new_sr / sr)
         )
+    alpha = np.exp(-2 * np.pi * 50 * (1 / new_sr))
+    proc = lfilter([1., -alpha], 1, proc)
     nperseg = int(win_len * new_sr)
     nperstep = int(time_step * new_sr)
     if window_shape == 'gaussian':
