@@ -5,6 +5,16 @@ from .segments import FileSegment, SignalSegment
 from ..exceptions import FunctionMismatch
 
 
+def _fix_signal_segment_times(output, segment, begin, padding):
+    """A helper function to adjust times for SignalSegment objects, which (unlike FileSegment objects)
+    are assumed to have the full padding width available on both sides of the segment."""
+    if padding is None:
+        padding = 0
+    clip_begin = begin - padding
+    clip_end = clip_begin + segment.signal.shape[0] / segment.sr
+    return fix_time_points(output, clip_begin, begin, clip_end - padding)
+
+
 def safe_path(path):
     if '~' in path:
         return os.path.expanduser(path)
@@ -27,15 +37,13 @@ class BaseAnalysisFunction(object):
             with ASTemporaryWavFile(segment.signal, segment.sr) as wav_path:
                 output = self._function(wav_path, *self.arguments)
             if begin is not None:
-                duration = segment.signal.shape[0] / segment.sr
-                output = fix_time_points(output, begin, padding, duration)
+                output = _fix_signal_segment_times(output, segment, begin, padding)
             return output
         elif isinstance(segment, SignalSegment):
             begin, padding = segment['begin'], segment['padding']
             output = self._function(segment.signal, segment.sr, *self.arguments)
             if begin is not None:
-                duration = segment.signal.shape[0] / segment.sr
-                output = fix_time_points(output, begin, padding, duration)
+                output = _fix_signal_segment_times(output, segment, begin, padding)
             return output
         elif isinstance(segment, str) and not self.requires_file:
             signal, sr = librosa.load(safe_path(segment), sr=None)
@@ -57,10 +65,7 @@ class BaseAnalysisFunction(object):
                 signal = signal[segment.channel]
             with ASTemporaryWavFile(signal, sr) as wav_path:
                 output = self._function(wav_path, *self.arguments)
-            if beg is not None:
-                duration = signal.shape[0] / sr
-                output = fix_time_points(output, segment.begin, padding, duration)
-            return output
+            return fix_time_points(output, beg, segment.begin, segment.end)
 
         elif isinstance(segment, FileSegment) and not self.requires_file:
             beg, end = segment.begin, segment.end
@@ -76,8 +81,7 @@ class BaseAnalysisFunction(object):
             if len(signal.shape) > 1:
                 signal = signal[segment.channel]
             output = self._function(signal, sr, *self.arguments)
-            output = fix_time_points(output, segment.begin, padding, dur)
-            return output
+            return fix_time_points(output, beg, segment.begin, segment.end)
         elif isinstance(segment, FileSegment) and self.requires_file and self.uses_segments:
             padding = segment['padding']
             if padding is None:

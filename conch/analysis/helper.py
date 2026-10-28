@@ -184,27 +184,13 @@ def fftfilt(b, x, *n):
     return y
 
 
-def fix_time_points(output, begin, padding, duration):
+def fix_time_points(output, clip_begin, keep_begin, keep_end):
     if isinstance(output, (list, tuple)):
-        return [fix_time_points(x, begin, padding, duration) for x in output]
-    if begin is not None:
-        if padding is not None:
-            begin -= padding
-        if isinstance(output, dict):
-            real_output = {}
-            for k, v in output.items():
-                if padding is not None and (k < padding or k > duration - padding):
-                    continue
-                real_output[k + begin] = v
-        elif isinstance(output, set):
-            real_output = set()
-            for k in output:
-                if padding is not None and (k < padding or k > duration - padding):
-                    continue
-                real_output.add(k + begin)
-        else:
-            return output
-        return real_output
+        return [fix_time_points(x, clip_begin, keep_begin, keep_end) for x in output]
+    if isinstance(output, dict):
+        return {k + clip_begin: v for k, v in output.items() if keep_begin <= k + clip_begin <= keep_end}
+    if isinstance(output, set):
+        return {k + clip_begin for k in output if keep_begin <= k + clip_begin <= keep_end}
     return output
 
 
