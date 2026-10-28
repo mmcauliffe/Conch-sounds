@@ -38,7 +38,7 @@ class BaseAnalysisFunction(object):
                 output = fix_time_points(output, begin, padding, duration)
             return output
         elif isinstance(segment, str) and not self.requires_file:
-            signal, sr = librosa.load(safe_path(segment))
+            signal, sr = librosa.load(safe_path(segment), sr=None)
             return self._function(signal, sr, *self.arguments)
         elif isinstance(segment, FileSegment) and self.requires_segment_as_arg:
             return self._function(segment, *self.arguments)
@@ -51,10 +51,10 @@ class BaseAnalysisFunction(object):
                     beg = 0
                 end += padding
             dur = end - beg
-            signal, sr = librosa.load(safe_path(segment.file_path), mono=False, offset=beg,
+            signal, sr = librosa.load(safe_path(segment.file_path), sr=None, mono=False, offset=beg,
                                       duration=dur)
             if len(signal.shape) > 1:
-                signal = signal[:, segment.channel]
+                signal = signal[segment.channel]
             with ASTemporaryWavFile(signal, sr) as wav_path:
                 output = self._function(wav_path, *self.arguments)
             if beg is not None:
@@ -71,10 +71,10 @@ class BaseAnalysisFunction(object):
                     beg = 0
                 end += padding
             dur = end - beg
-            signal, sr = librosa.load(safe_path(segment.file_path), mono=False, offset=beg,
+            signal, sr = librosa.load(safe_path(segment.file_path), sr=None, mono=False, offset=beg,
                                       duration=dur)
             if len(signal.shape) > 1:
-                signal = signal[:, segment.channel]
+                signal = signal[segment.channel]
             output = self._function(signal, sr, *self.arguments)
             output = fix_time_points(output, segment.begin, padding, dur)
             return output
