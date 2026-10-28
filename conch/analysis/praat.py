@@ -9,3 +9,4 @@ class PraatAnalysisFunction(BaseAnalysisFunction):
         self._function = PyraatFunction(praat_script_path,praat_path, arguments)
         self.requires_file = True
         self.uses_segments = self._function.uses_long
+        self.point_measure = self._function.point_measure

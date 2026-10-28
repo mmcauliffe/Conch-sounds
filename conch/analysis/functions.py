@@ -27,6 +27,7 @@ class BaseAnalysisFunction(object):
         self.requires_file = False
         self.requires_segment_as_arg = False
         self.uses_segments = False
+        self.point_measure = False
         self.arguments = []
 
     def __call__(self, segment):
@@ -36,13 +37,13 @@ class BaseAnalysisFunction(object):
             begin, padding = segment['begin'], segment['padding']
             with ASTemporaryWavFile(segment.signal, segment.sr) as wav_path:
                 output = self._function(wav_path, *self.arguments)
-            if begin is not None:
+            if begin is not None and not self.point_measure:
                 output = _fix_signal_segment_times(output, segment, begin, padding)
             return output
         elif isinstance(segment, SignalSegment):
             begin, padding = segment['begin'], segment['padding']
             output = self._function(segment.signal, segment.sr, *self.arguments)
-            if begin is not None:
+            if begin is not None and not self.point_measure:
                 output = _fix_signal_segment_times(output, segment, begin, padding)
             return output
         elif isinstance(segment, str) and not self.requires_file:
@@ -65,6 +66,8 @@ class BaseAnalysisFunction(object):
                 signal = signal[segment.channel]
             with ASTemporaryWavFile(signal, sr) as wav_path:
                 output = self._function(wav_path, *self.arguments)
+            if self.point_measure:
+                return output
             return fix_time_points(output, beg, segment.begin, segment.end)
 
         elif isinstance(segment, FileSegment) and not self.requires_file:
@@ -81,6 +84,8 @@ class BaseAnalysisFunction(object):
             if len(signal.shape) > 1:
                 signal = signal[segment.channel]
             output = self._function(signal, sr, *self.arguments)
+            if self.point_measure:
+                return output
             return fix_time_points(output, beg, segment.begin, segment.end)
         elif isinstance(segment, FileSegment) and self.requires_file and self.uses_segments:
             padding = segment['padding']
