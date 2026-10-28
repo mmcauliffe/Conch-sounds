@@ -28,7 +28,7 @@ def acoustic_similarity_mapping(path_mapping, analysis_function, distance_functi
 
     """
 
-    num_cores = int((3 * cpu_count()) / 4)
+    num_cores = max(1, int(0.75 * cpu_count()))
     segments = set()
     for x in path_mapping:
         segments.update(x)
@@ -60,7 +60,7 @@ def axb_mapping(path_mapping, analysis_function, distance_function, stop_check=N
 
     """
 
-    num_cores = int((3 * cpu_count()) / 4)
+    num_cores = max(1, int(0.75 * cpu_count()))
     segments = set()
     for x in path_mapping:
         segments.update(x)
@@ -178,7 +178,7 @@ def analyze_long_file(path, segments, analysis_function,
             c = 0
         segment_mapping.add_file_segment(path, b, e, c, padding=padding)
     if num_jobs is None:
-        num_jobs = int((3 * cpu_count()) / 4)
+        num_jobs = max(1, int(0.75 * cpu_count()))
     if multiprocessing:
         output_dict = generate_cache_mp(segment_mapping, analysis_function, num_jobs,
                                  call_back, stop_check)
@@ -192,7 +192,7 @@ def analyze_segments(segment_mapping, analysis_function,
                      num_jobs=None,
                      call_back=None, stop_check=None, multiprocessing=True):
     if num_jobs is None:
-        num_cores = int((3 * cpu_count()) / 4)
+        num_cores = max(1, int(0.75 * cpu_count()))
     else:
         num_cores = num_jobs
     if multiprocessing:

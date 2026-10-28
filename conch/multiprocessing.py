@@ -9,7 +9,7 @@ from conch.exceptions import ConchPythonError
 
 
 def default_njobs():
-    return int(0.75 * cpu_count())
+    return max(1, int(0.75 * cpu_count()))
 
 
 class Counter(object):
