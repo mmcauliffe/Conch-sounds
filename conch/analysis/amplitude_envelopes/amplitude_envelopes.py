@@ -48,6 +48,12 @@ class AmplitudeEnvelopeFunction(BaseAnalysisFunction):
 
 
 def generate_amplitude_envelopes(signal, sr, num_bands, min_frequency, max_frequency, mode='downsample'):
+    if sr < (max_frequency + 200) * 2:
+        new_sr = (max_frequency + 200) * 2
+        signal = resample(
+            signal, int(signal.shape[0] * new_sr / sr)
+        )
+        sr = new_sr
     signal = preemphasize(signal, 0.97)
     proc = signal / np.sqrt(np.mean(signal ** 2)) * 0.03
 
