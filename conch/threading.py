@@ -10,7 +10,7 @@ from conch.exceptions import ConchPythonError
 
 def default_njobs():
     import multiprocessing
-    return int(0.75 * multiprocessing.cpu_count())
+    return max(1, int(0.75 * multiprocessing.cpu_count()))
 
 
 class Counter(object):
