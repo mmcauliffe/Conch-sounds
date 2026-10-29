@@ -16,7 +16,7 @@ def test_acoustic_similarity_directories(tts_dir, call_back):
     praat_path = shutil.which("praat")
     if praat_path is None:
         pytest.skip("No Praat")
-    func = PraatPitchTrackFunction(praat_path=praatpath)
+    func = PraatPitchTrackFunction(praat_path=praat_path)
     dist_func = DtwFunction(norm=True)
     scores = acoustic_similarity_directory(tts_dir, analysis_function=func, distance_function=dist_func,
                                            call_back=call_back, multiprocessing=False)
